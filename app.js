@@ -1,7 +1,8 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
-
+// const db = require("./config/db");
 require("./config/connectdb");
 const createCompanyTable = require("./config/companyCreateTable");
 
@@ -13,7 +14,7 @@ app.get("/", (req, res) => {
 });
 
 createCompanyTable();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 
 // COMPANY ROUTE
