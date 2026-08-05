@@ -14,10 +14,10 @@ const pool = mysql.createPool({
   idleTimeout: 60000,
   queueLimit: 0,
 
-  ssl: {
-    minVersion: "TLSv1.2",
-    rejectUnauthorized: true,
-  },
+  // ssl: {
+  //   minVersion: "TLSv1.2",
+  //   rejectUnauthorized: true,
+  // },
 });
 
 // Test Connection

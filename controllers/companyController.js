@@ -53,10 +53,16 @@ exports.addCompany=(req,res)=>{
     Company.createCompany(req.body,(err,result)=>{
 
 
-        if(err)
-        {
-            return res.status(500).json(err);
-        }
+        if (err) {
+
+    if (err.message) {
+        return res.status(400).json({
+            message: err.message
+        });
+    }
+
+    return res.status(500).json(err);
+}
 
 
         res.json({
