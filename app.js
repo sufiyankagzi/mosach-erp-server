@@ -22,7 +22,7 @@ const createUserTable = require("./config/userTable");
 
 const loginRoutes = require("./routes/loginRoutes");
 const companyRoutes = require("./routes/companyRoutes");
-const usersRoutes = require("./routes/usersRoutes");
+const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 
 
@@ -105,7 +105,7 @@ app.use("/api/login", loginRoutes);
 
 app.use("/api/company", companyRoutes);
 
-app.use("/api/users", usersRoutes);
+app.use("/api/users", userRoutes);
 
 app.use("/api/auth", authRoutes);
 

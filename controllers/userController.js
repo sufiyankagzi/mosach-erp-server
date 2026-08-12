@@ -1,4 +1,4 @@
-const User = require("../models/usersModel");
+const User = require("../models/userModel");
 
 // GET ALL USERS
 exports.getUsers = (req, res) => {
@@ -29,8 +29,20 @@ exports.getUser = (req, res) => {
 };
 
 // CREATE USER
+// CREATE USER
 exports.addUser = (req, res) => {
-    User.createUser(req.body, (err, result) => {
+
+    console.log("REQ.USER:", req.user);
+    console.log("COMPANY ID:", req.user?.companyid);
+
+    const data = {
+        ...req.body,
+        companyid: req.user?.companyid
+    };
+
+    console.log("CREATE USER DATA:", data);
+
+    User.createUser(data, (err, result) => {
 
         if (err) {
 
@@ -43,7 +55,12 @@ exports.addUser = (req, res) => {
                 });
             }
 
-            return res.status(500).json(err);
+            console.error("CREATE USER ERROR:", err);
+
+            return res.status(500).json({
+                message: err.message,
+                code: err.code
+            });
         }
 
         res.status(201).json({
@@ -52,7 +69,6 @@ exports.addUser = (req, res) => {
         });
     });
 };
-
 // UPDATE USER
 exports.editUser = (req, res) => {
     User.updateUser(req.params.id, req.body, (err, result) => {
