@@ -71,7 +71,15 @@ exports.addUser = (req, res) => {
 };
 // UPDATE USER
 exports.editUser = (req, res) => {
-    User.updateUser(req.params.id, req.body, (err, result) => {
+
+    const data = {
+        ...req.body,
+        companyid: req.user?.companyid
+    };
+
+    console.log("UPDATE USER DATA:", data);
+
+    User.updateUser(req.params.id, data, (err, result) => {
 
         if (err) {
 
@@ -92,7 +100,6 @@ exports.editUser = (req, res) => {
         });
     });
 };
-
 // DELETE USER
 exports.deleteUser = (req, res) => {
     User.deleteUser(req.params.id, (err) => {
