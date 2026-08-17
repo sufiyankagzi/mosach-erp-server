@@ -31,7 +31,7 @@ const createGender = (data, callback) => {
     const checkSql = `
         SELECT genderid, gender
         FROM gender
-        WHERE geder = ?
+        WHERE gender = ?
     `;
 
     db.query(
