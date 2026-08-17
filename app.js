@@ -14,6 +14,7 @@ require("./config/connectdb");
 
 const createCompanyTable = require("./config/companyCreateTable");
 const createUserTable = require("./config/userTable");
+const createSalesPersonTable = require("./config/salesPersonTable");
 
 
 // ========================================
@@ -24,7 +25,7 @@ const loginRoutes = require("./routes/loginRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
-
+const salespersonRoutes = require("./routes/salespersonRoutes");
 
 // ========================================
 // CORS
@@ -102,12 +103,10 @@ app.get("/", (req, res) => {
 // ========================================
 
 app.use("/api/login", loginRoutes);
-
 app.use("/api/company", companyRoutes);
-
 app.use("/api/users", userRoutes);
-
 app.use("/api/auth", authRoutes);
+app.use("/api/salesperson", salespersonRoutes )
 
 
 // ========================================
@@ -116,6 +115,7 @@ app.use("/api/auth", authRoutes);
 
 createCompanyTable();
 createUserTable();
+createSalesPersonTable();
 
 
 // ========================================
