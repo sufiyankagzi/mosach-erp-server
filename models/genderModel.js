@@ -88,8 +88,7 @@ const updateGender = (id, data, callback) => {
     db.query(
         checkSql,
         [
-            id,
-            data.gender
+            id
         ],
         (err, rows) => {
 
@@ -109,7 +108,7 @@ const updateGender = (id, data, callback) => {
             const sql = `
                 UPDATE gender
                 SET
-                    gender = ?,
+                    gender = ?
                 WHERE genderid = ?
             `;
 
