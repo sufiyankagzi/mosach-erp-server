@@ -83,9 +83,6 @@ const updateGender = (id, data, callback) => {
         SELECT genderid, gender
         FROM gender
         WHERE genderid != ?
-        AND (
-            gender = ?
-        )
     `;
 
     db.query(
