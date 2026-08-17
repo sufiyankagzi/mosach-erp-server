@@ -62,8 +62,7 @@ exports.addGender = (req, res) => {
             if (err) {
 
                 if (
-                    err.message === "Gender already exists" ||
-                    
+                    err.message === "Gender already exists"
                 ) {
                     return res.status(400).json({
                         message: err.message
@@ -89,7 +88,6 @@ exports.addGender = (req, res) => {
     );
 };
 
-
 // UPDATE GENDER
 exports.editGender = (req, res) => {
 
@@ -110,8 +108,7 @@ exports.editGender = (req, res) => {
             if (err) {
 
                 if (
-                    err.message === "Gender already exists" ||
-                    
+                    err.message === "Gender already exists"
                 ) {
                     return res.status(400).json({
                         message: err.message
