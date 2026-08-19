@@ -12,6 +12,7 @@ const createUserTable = require("./config/userTable");
 const createSalesPersonTable = require("./config/salesPersonTable");
 const createGenderTable = require("./config/genderTable")
 const createGroupTable = require("./config/groupTable")
+const createCategoryTable = require("./config/categoryTable")
 
 // ROUTES
 
@@ -21,6 +22,7 @@ const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const salespersonRoutes = require("./routes/salespersonRoutes");
 const genderRoutes = require("./routes/genderRoutes")
+const categoryRoutes = require("./routes/categoryRoutes")
 
 // CORS
 
@@ -89,6 +91,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/salesperson", salespersonRoutes )
 app.use("/api/gender",genderRoutes);
+app.use("/api/category",categoryRoutes)
 
 
 // ========================================
@@ -100,6 +103,7 @@ createUserTable();
 createSalesPersonTable();
 createGenderTable();
 createGroupTable();
+createCategoryTable();
 
 // ERROR HANDLER
 
