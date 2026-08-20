@@ -14,7 +14,7 @@ const createGenderTable = require("./config/genderTable")
 const createGroupTable = require("./config/groupTable")
 const createCategoryTable = require("./config/categoryTable")
 const createColorTable = require("./config/colorTable")
-
+const createSizeGroupTable = require("./config/sizeGroupTable")
 // ROUTES
 
 const loginRoutes = require("./routes/loginRoutes");
@@ -108,6 +108,7 @@ createGenderTable();
 createGroupTable();
 createCategoryTable();
 createColorTable();
+createSizeGroupTable();
 
 // ERROR HANDLER
 
