@@ -25,6 +25,7 @@ const salespersonRoutes = require("./routes/salespersonRoutes");
 const genderRoutes = require("./routes/genderRoutes")
 const categoryRoutes = require("./routes/categoryRoutes")
 const colorRoutes = require("./routes/colorRoutes")
+const sizeGroupRoutes = require("./routes/sizeGroupRoutes")
 
 // CORS
 
@@ -95,6 +96,7 @@ app.use("/api/salesperson", salespersonRoutes )
 app.use("/api/gender",genderRoutes);
 app.use("/api/category",categoryRoutes)
 app.use("/api/color",colorRoutes)
+app.use("api/sizegroup",sizeGroupRoutes)
 
 
 // ========================================
