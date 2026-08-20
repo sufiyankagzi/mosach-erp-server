@@ -112,7 +112,7 @@ createCategoryTable();
 createColorTable();
 createSizeGroupTable();
 
-// ERROR HANDLER
+// ERROR HANDLER  abc
 
 app.use((err, req, res, next) => {
     console.error("Server Error:", err.message);
