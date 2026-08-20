@@ -13,6 +13,7 @@ const createSalesPersonTable = require("./config/salesPersonTable");
 const createGenderTable = require("./config/genderTable")
 const createGroupTable = require("./config/groupTable")
 const createCategoryTable = require("./config/categoryTable")
+const createColorTable = require("./config/colorTable")
 
 // ROUTES
 
@@ -104,6 +105,7 @@ createSalesPersonTable();
 createGenderTable();
 createGroupTable();
 createCategoryTable();
+createColorTable();
 
 // ERROR HANDLER
 
