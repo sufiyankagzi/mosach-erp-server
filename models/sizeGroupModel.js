@@ -4,7 +4,7 @@ const db = require("../config/connectdb");
 const getAllSizeGroup = (callback) => {
     const sql = `
         SELECT *
-        FROM sizegrouo
+        FROM sizegroup
         ORDER BY sizegroupid DESC
     `;
 
