@@ -77,6 +77,11 @@ const createSizeGroup = (data, callback) => {
 
 
 // UPDATE SIZE GROUP
+
+
+
+
+
 const updateSizeGroup = (id, data, callback) => {
 
     const checkSql = `
