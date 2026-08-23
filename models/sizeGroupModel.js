@@ -18,7 +18,7 @@ const getSizeGroupById = (id, callback) => {
     const sql = `
         SELECT *
         FROM sizegroup
-        WHERE sizegroup = ?
+        WHERE sizegroupid = ?
     `;
 
     db.query(sql, [id], callback);
