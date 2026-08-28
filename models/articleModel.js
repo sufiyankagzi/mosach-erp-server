@@ -94,7 +94,9 @@ exports.getArticleVariants = (articleid, callback) => {
 
             av.sizeid,
             s.size,
+
             s.sizegroupid,
+            sg.sizegroup,
 
             av.isactive,
             av.created_at
@@ -110,6 +112,9 @@ exports.getArticleVariants = (articleid, callback) => {
         LEFT JOIN size s
             ON av.sizeid = s.sizeid
 
+        LEFT JOIN sizegroup sg
+            ON s.sizegroupid = sg.sizegroupid
+
         WHERE av.articleid = ?
 
         ORDER BY av.variantid ASC
@@ -117,7 +122,6 @@ exports.getArticleVariants = (articleid, callback) => {
 
     db.query(sql, [articleid], callback);
 };
-
 
 // ==========================================
 // GET ARTICLE IMAGES

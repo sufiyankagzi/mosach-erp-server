@@ -82,9 +82,9 @@ exports.createOrder = (req, res) => {
     } = req.body;
 
 
-    // -------------------------------------------------
+    // =====================================================
     // VALIDATION
-    // -------------------------------------------------
+    // =====================================================
 
     if (!salespersonid) {
         return res.status(400).json({
@@ -94,7 +94,11 @@ exports.createOrder = (req, res) => {
     }
 
 
-    if (!details || !Array.isArray(details) || details.length === 0) {
+    if (
+        !details ||
+        !Array.isArray(details) ||
+        details.length === 0
+    ) {
         return res.status(400).json({
             success: false,
             message: "At least one order detail is required"
@@ -102,18 +106,47 @@ exports.createOrder = (req, res) => {
     }
 
 
-    // -------------------------------------------------
-    // VALIDATE DETAILS
-    // -------------------------------------------------
+    // =====================================================
+    // VALIDATE ORDER DETAILS
+    // =====================================================
 
     for (const detail of details) {
 
-        if (!detail.variantid) {
+        if (!detail.articleid) {
             return res.status(400).json({
                 success: false,
-                message: "Variant ID is required in every order detail"
+                message:
+                    "Article is required in every order detail"
             });
         }
+
+
+        if (!detail.sizegroupid) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Size Group is required in every order detail"
+            });
+        }
+
+
+        if (!detail.sizeid) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Size is required in every order detail"
+            });
+        }
+
+
+        if (!detail.colorid) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Color is required in every order detail"
+            });
+        }
+
 
         if (
             detail.qty === undefined ||
@@ -122,158 +155,200 @@ exports.createOrder = (req, res) => {
         ) {
             return res.status(400).json({
                 success: false,
-                message: "Quantity must be greater than 0"
+                message:
+                    "Quantity must be greater than 0"
             });
         }
     }
 
 
-    // -------------------------------------------------
+    // =====================================================
     // CALCULATE TOTAL QTY
-    // -------------------------------------------------
+    // =====================================================
 
     const totalqty = details.reduce(
         (total, detail) => {
+
             return total + Number(detail.qty);
+
         },
         0
     );
 
 
-    // -------------------------------------------------
+    // =====================================================
     // GENERATE ORDER NUMBER
-    // -------------------------------------------------
+    // =====================================================
 
-    orderModel.getLastOrderNo((err, result) => {
+    orderModel.getLastOrderNo(
+        (err, result) => {
 
-        if (err) {
-            console.error("GET LAST ORDER NO ERROR:", err);
+            if (err) {
 
-            return res.status(500).json({
-                success: false,
-                message: "Failed to generate order number",
-                error: err.message
-            });
-        }
+                console.error(
+                    "GET LAST ORDER NO ERROR:",
+                    err
+                );
 
-
-        let nextOrderNumber = 1;
-
-
-        if (result && result.length > 0 && result[0].orderno) {
-
-            const lastOrderNo = String(result[0].orderno);
-
-            const numberPart = parseInt(
-                lastOrderNo.replace(/\D/g, ""),
-                10
-            );
-
-            if (!isNaN(numberPart)) {
-                nextOrderNumber = numberPart + 1;
+                return res.status(500).json({
+                    success: false,
+                    message:
+                        "Failed to generate order number",
+                    error: err.message
+                });
             }
-        }
 
 
-        const orderno =
-            "ORD-" + String(nextOrderNumber).padStart(5, "0");
+            let nextOrderNumber = 1;
 
 
-        // -------------------------------------------------
-        // ORDER DATE
-        // -------------------------------------------------
+            if (
+                result &&
+                result.length > 0 &&
+                result[0].orderno
+            ) {
 
-        const finalOrderDate =
-            orderdate || new Date();
+                const lastOrderNo =
+                    String(result[0].orderno);
 
 
-        // -------------------------------------------------
-        // CREATE ORDER
-        // -------------------------------------------------
-
-        orderModel.createOrder(
-            {
-                orderno,
-                orderdate: finalOrderDate,
-                salespersonid,
-                totalqty
-            },
-
-            (createErr, orderResult) => {
-
-                if (createErr) {
-
-                    console.error(
-                        "CREATE ORDER ERROR:",
-                        createErr
+                const numberPart =
+                    parseInt(
+                        lastOrderNo.replace(/\D/g, ""),
+                        10
                     );
 
-                    return res.status(500).json({
-                        success: false,
-                        message: "Failed to create order",
-                        error: createErr.message
-                    });
+
+                if (!isNaN(numberPart)) {
+
+                    nextOrderNumber =
+                        numberPart + 1;
                 }
+            }
 
 
-                const orderid = orderResult.insertId;
+            const orderno =
+                "ORD-" +
+                String(nextOrderNumber)
+                    .padStart(5, "0");
 
 
-                // -------------------------------------------------
-                // CREATE ORDER DETAILS
-                // -------------------------------------------------
+            // =================================================
+            // ORDER DATE
+            // =================================================
 
-                orderModel.createOrderDetails(
-                    orderid,
-                    details,
-
-                    (detailErr) => {
-
-                        if (detailErr) {
-
-                            console.error(
-                                "CREATE ORDER DETAILS ERROR:",
-                                detailErr
-                            );
+            const finalOrderDate =
+                orderdate ||
+                new Date();
 
 
-                            // Rollback style cleanup
-                            orderModel.deleteOrder(
-                                orderid,
-                                () => {}
-                            );
+            // =================================================
+            // CREATE ORDER
+            // =================================================
 
+            orderModel.createOrder(
+                {
+                    orderno,
+                    orderdate: finalOrderDate,
+                    salespersonid,
+                    totalqty
+                },
 
-                            return res.status(500).json({
-                                success: false,
-                                message: "Failed to create order details",
-                                error: detailErr.message
-                            });
-                        }
+                (createErr, orderResult) => {
 
+                    if (createErr) {
 
-                        // -------------------------------------------------
-                        // SUCCESS
-                        // -------------------------------------------------
+                        console.error(
+                            "CREATE ORDER ERROR:",
+                            createErr
+                        );
 
-                        res.status(201).json({
-                            success: true,
-                            message: "Order created successfully",
-
-                            data: {
-                                orderid,
-                                orderno,
-                                orderdate: finalOrderDate,
-                                salespersonid,
-                                totalqty,
-                                details
-                            }
+                        return res.status(500).json({
+                            success: false,
+                            message:
+                                "Failed to create order",
+                            error:
+                                createErr.message
                         });
                     }
-                );
-            }
-        );
-    });
+
+
+                    const orderid =
+                        orderResult.insertId;
+
+
+                    // =============================================
+                    // CREATE ORDER DETAILS
+                    // =============================================
+
+                    orderModel.createOrderDetails(
+                        orderid,
+                        details,
+
+                        (detailErr) => {
+
+                            if (detailErr) {
+
+                                console.error(
+                                    "CREATE ORDER DETAILS ERROR:",
+                                    detailErr
+                                );
+
+
+                                // ---------------------------------
+                                // CLEANUP HEADER
+                                // ---------------------------------
+
+                                orderModel.deleteOrder(
+                                    orderid,
+                                    () => {}
+                                );
+
+
+                                return res.status(500).json({
+                                    success: false,
+                                    message:
+                                        "Failed to create order details",
+                                    error:
+                                        detailErr.message
+                                });
+                            }
+
+
+                            // =====================================
+                            // SUCCESS
+                            // =====================================
+
+                            return res.status(201).json({
+
+                                success: true,
+
+                                message:
+                                    "Order created successfully",
+
+                                data: {
+
+                                    orderid,
+
+                                    orderno,
+
+                                    orderdate:
+                                        finalOrderDate,
+
+                                    salespersonid,
+
+                                    totalqty,
+
+                                    details
+
+                                }
+                            });
+                        }
+                    );
+                }
+            );
+        }
+    );
 };
 
 

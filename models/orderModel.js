@@ -82,21 +82,19 @@ exports.getOrderDetails = (orderid, callback) => {
 
             od.orderdetailid,
             od.orderid,
-            od.variantid,
 
-            av.articleid,
-
+            od.articleid,
             a.articleno,
             a.articlename,
 
-            av.genderid,
-            g.gender,
+            od.sizegroupid,
+            sg.sizegroup,
 
-            av.colorid,
-            c.color,
-
-            av.sizeid,
+            od.sizeid,
             s.size,
+
+            od.colorid,
+            c.color,
 
             (
                 SELECT ai.imageurl
@@ -111,20 +109,17 @@ exports.getOrderDetails = (orderid, callback) => {
 
         FROM orderdetails od
 
-        LEFT JOIN articlevariant av
-            ON od.variantid = av.variantid
-
         LEFT JOIN articlemaster a
-            ON av.articleid = a.articleid
+            ON od.articleid = a.articleid
 
-        LEFT JOIN gender g
-            ON av.genderid = g.genderid
-
-        LEFT JOIN color c
-            ON av.colorid = c.colorid
+        LEFT JOIN sizegroup sg
+            ON od.sizegroupid = sg.sizegroupid
 
         LEFT JOIN size s
-            ON av.sizeid = s.sizeid
+            ON od.sizeid = s.sizeid
+
+        LEFT JOIN color c
+            ON od.colorid = c.colorid
 
         WHERE od.orderid = ?
 
@@ -275,7 +270,10 @@ exports.createOrderDetail = (detailData, callback) => {
 
     const {
         orderid,
-        variantid,
+        articleid,
+        sizegroupid,
+        sizeid,
+        colorid,
         qty
     } = detailData;
 
@@ -283,17 +281,23 @@ exports.createOrderDetail = (detailData, callback) => {
         INSERT INTO orderdetails
         (
             orderid,
-            variantid,
+            articleid,
+            sizegroupid,
+            sizeid,
+            colorid,
             qty
         )
-        VALUES (?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
         sql,
         [
             orderid,
-            variantid,
+            articleid,
+            sizegroupid,
+            sizeid,
+            colorid,
             qty
         ],
         callback
@@ -313,7 +317,10 @@ exports.createOrderDetails = (orderid, details, callback) => {
 
     const values = details.map(detail => [
         orderid,
-        detail.variantid,
+        detail.articleid,
+        detail.sizegroupid,
+        detail.sizeid,
+        detail.colorid,
         detail.qty
     ]);
 
@@ -321,7 +328,10 @@ exports.createOrderDetails = (orderid, details, callback) => {
         INSERT INTO orderdetails
         (
             orderid,
-            variantid,
+            articleid,
+            sizegroupid,
+            sizeid,
+            colorid,
             qty
         )
         VALUES ?
@@ -335,33 +345,44 @@ exports.createOrderDetails = (orderid, details, callback) => {
 // UPDATE ORDER DETAIL
 // =====================================================
 
-exports.updateOrderDetail = (orderdetailid, detailData, callback) => {
+exports.updateOrderDetail = (
+    orderdetailid,
+    detailData,
+    callback
+) => {
 
     const {
-        variantid,
+        articleid,
+        sizegroupid,
+        sizeid,
+        colorid,
         qty
     } = detailData;
 
     const sql = `
         UPDATE orderdetails
         SET
-            variantid = ?,
+            articleid = ?,
+            sizegroupid = ?,
+            sizeid = ?,
+            colorid = ?,
             qty = ?
-
         WHERE orderdetailid = ?
     `;
 
     db.query(
         sql,
         [
-            variantid,
+            articleid,
+            sizegroupid,
+            sizeid,
+            colorid,
             qty,
             orderdetailid
         ],
         callback
     );
 };
-
 
 // =====================================================
 // DELETE SINGLE ORDER DETAIL
