@@ -16,6 +16,7 @@ const createCategoryTable = require("./config/categoryTable")
 const createColorTable = require("./config/colorTable")
 const createSizeGroupTable = require("./config/sizeGroupTable")
 const createSizeTable = require("./config/sizeTable")
+const {createArticleMasterTable, createArticleVariantTable, createArticleImagesTable} = require("./config/articleTable");
 // ROUTES
 
 const loginRoutes = require("./routes/loginRoutes");
@@ -28,6 +29,7 @@ const categoryRoutes = require("./routes/categoryRoutes")
 const colorRoutes = require("./routes/colorRoutes")
 const sizeGroupRoutes = require("./routes/sizeGroupRoutes")
 const sizeRoutes = require("./routes/sizeRoutes")
+const articleRoutes = require("./routes/articleRoutes")
 
 // CORS
 
@@ -100,6 +102,7 @@ app.use("/api/category",categoryRoutes)
 app.use("/api/color",colorRoutes)
 app.use("/api/sizegroup",sizeGroupRoutes)
 app.use("/api/size",sizeRoutes)
+app.use("/api/article",articleRoutes)
 
 
 // ========================================
@@ -115,6 +118,9 @@ createCategoryTable();
 createColorTable();
 createSizeGroupTable();
 createSizeTable();
+createArticleMasterTable();
+createArticleImagesTable();
+createArticleVariantTable();
 
 // ERROR HANDLER  abc
 
