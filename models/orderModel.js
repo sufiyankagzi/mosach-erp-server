@@ -28,7 +28,16 @@ exports.getAllOrders = (callback) => {
         ORDER BY o.orderid DESC
     `;
 
-    db.query(sql, callback);
+    db.query(sql, (err, results) => {
+
+        if (err) {
+            console.error("ORDER MODEL SQL ERROR:", err);
+            console.error("SQL:", sql);
+            return callback(err, null);
+        }
+
+        callback(null, results);
+    });
 };
 
 
