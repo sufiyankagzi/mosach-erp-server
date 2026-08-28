@@ -1,5 +1,5 @@
-
 const db = require("./connectdb");
+
 
 // ========================================
 // ORDERS TABLE
@@ -9,6 +9,7 @@ const createOrdersTable = () => {
 
   const sql = `
     CREATE TABLE IF NOT EXISTS orders (
+
       orderid INT AUTO_INCREMENT PRIMARY KEY,
 
       orderno VARCHAR(50) NOT NULL UNIQUE,
@@ -19,17 +20,28 @@ const createOrdersTable = () => {
 
       totalqty DECIMAL(12,2) NOT NULL DEFAULT 0,
 
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      isactive TINYINT(1) NOT NULL DEFAULT 1,
+
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+      CONSTRAINT fk_orders_salesperson
+        FOREIGN KEY (salespersonid)
+        REFERENCES salesperson(salespersonid)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+
     )
   `;
 
   db.query(sql, (err) => {
 
     if (err) {
+
       console.error(
         "Orders table error:",
         err.message
       );
+
       return;
     }
 
@@ -50,6 +62,7 @@ const createOrderDetailsTable = () => {
 
   const sql = `
     CREATE TABLE IF NOT EXISTS orderdetails (
+
       orderdetailid INT AUTO_INCREMENT PRIMARY KEY,
 
       orderid INT NOT NULL,
@@ -67,20 +80,25 @@ const createOrderDetailsTable = () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
       CONSTRAINT fk_orderdetails_order
+
         FOREIGN KEY (orderid)
         REFERENCES orders(orderid)
+
         ON DELETE CASCADE
         ON UPDATE CASCADE
+
     )
   `;
 
   db.query(sql, (err) => {
 
     if (err) {
+
       console.error(
         "Order Details table error:",
         err.message
       );
+
       return;
     }
 
@@ -101,11 +119,13 @@ const createOrderTables = () => {
 
   createOrdersTable();
 
-  // Wait for orders table before creating
-  // orderdetails because of foreign key
+  // Wait for orders table
+  // before creating orderdetails
 
   setTimeout(() => {
+
     createOrderDetailsTable();
+
   }, 500);
 
 };
@@ -116,4 +136,3 @@ const createOrderTables = () => {
 // ========================================
 
 module.exports = createOrderTables;
-

@@ -15,12 +15,15 @@ exports.getAllOrders = (callback) => {
             o.salespersonid,
             sp.salespersonname,
             o.totalqty,
+            o.isactive,
             o.created_at
 
         FROM orders o
 
         LEFT JOIN salesperson sp
             ON o.salespersonid = sp.salespersonid
+
+        WHERE o.isactive = 1
 
         ORDER BY o.orderid DESC
     `;
@@ -43,6 +46,7 @@ exports.getOrderById = (orderid, callback) => {
             o.salespersonid,
             sp.salespersonname,
             o.totalqty,
+            o.isactive,
             o.created_at
 
         FROM orders o
@@ -51,6 +55,7 @@ exports.getOrderById = (orderid, callback) => {
             ON o.salespersonid = sp.salespersonid
 
         WHERE o.orderid = ?
+          AND o.isactive = 1
     `;
 
     db.query(sql, [orderid], callback);
@@ -172,9 +177,10 @@ exports.createOrder = (orderData, callback) => {
             orderno,
             orderdate,
             salespersonid,
-            totalqty
+            totalqty,
+            isactive
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -183,7 +189,8 @@ exports.createOrder = (orderData, callback) => {
             orderno,
             orderdate,
             salespersonid,
-            totalqty || 0
+            totalqty || 0,
+            1
         ],
         callback
     );
@@ -200,7 +207,8 @@ exports.updateOrder = (orderid, orderData, callback) => {
         orderno,
         orderdate,
         salespersonid,
-        totalqty
+        totalqty,
+        isactive
     } = orderData;
 
     const sql = `
@@ -209,7 +217,8 @@ exports.updateOrder = (orderid, orderData, callback) => {
             orderno = ?,
             orderdate = ?,
             salespersonid = ?,
-            totalqty = ?
+            totalqty = ?,
+            isactive = ?
 
         WHERE orderid = ?
     `;
@@ -221,6 +230,7 @@ exports.updateOrder = (orderid, orderData, callback) => {
             orderdate,
             salespersonid,
             totalqty || 0,
+            isactive !== undefined ? isactive : 1,
             orderid
         ],
         callback
@@ -235,11 +245,16 @@ exports.updateOrder = (orderid, orderData, callback) => {
 exports.deleteOrder = (orderid, callback) => {
 
     const sql = `
-        DELETE FROM orders
+        UPDATE orders
+        SET isactive = 0
         WHERE orderid = ?
     `;
 
-    db.query(sql, [orderid], callback);
+    db.query(
+        sql,
+        [orderid],
+        callback
+    );
 };
 
 
