@@ -1,34 +1,31 @@
-
 const Article = require("../models/articleModel");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 
-// ==========================================
+// ======================================================
 // GET ALL ARTICLES
-// ==========================================
+// ======================================================
 
 exports.getAllArticles = (req, res) => {
-
     Article.getAllArticles((err, result) => {
-
         if (err) {
+            console.error("GET ALL ARTICLES ERROR:", err);
+
             return res.status(500).json({
                 message: "Error fetching articles",
-                error: err
+                error: err.message
             });
         }
 
         res.json(result);
-
     });
-
 };
 
 
-// ==========================================
+// ======================================================
 // GET ARTICLE BY ID
-// ==========================================
+// ======================================================
 
 exports.getArticleById = (req, res) => {
 
@@ -37,28 +34,28 @@ exports.getArticleById = (req, res) => {
     Article.getArticleById(articleid, (err, result) => {
 
         if (err) {
+            console.error("GET ARTICLE ERROR:", err);
+
             return res.status(500).json({
                 message: "Error fetching article",
-                error: err
+                error: err.message
             });
         }
 
-        if (result.length === 0) {
+        if (!result || result.length === 0) {
             return res.status(404).json({
                 message: "Article not found"
             });
         }
 
         res.json(result[0]);
-
     });
-
 };
 
 
-// ==========================================
+// ======================================================
 // GET ARTICLE VARIANTS
-// ==========================================
+// ======================================================
 
 exports.getArticleVariants = (req, res) => {
 
@@ -67,22 +64,22 @@ exports.getArticleVariants = (req, res) => {
     Article.getArticleVariants(articleid, (err, result) => {
 
         if (err) {
+            console.error("GET ARTICLE VARIANTS ERROR:", err);
+
             return res.status(500).json({
                 message: "Error fetching article variants",
-                error: err
+                error: err.message
             });
         }
 
         res.json(result);
-
     });
-
 };
 
 
-// ==========================================
+// ======================================================
 // GET ARTICLE IMAGES
-// ==========================================
+// ======================================================
 
 exports.getArticleImages = (req, res) => {
 
@@ -91,22 +88,22 @@ exports.getArticleImages = (req, res) => {
     Article.getArticleImages(articleid, (err, result) => {
 
         if (err) {
+            console.error("GET ARTICLE IMAGES ERROR:", err);
+
             return res.status(500).json({
                 message: "Error fetching article images",
-                error: err
+                error: err.message
             });
         }
 
         res.json(result);
-
     });
-
 };
 
 
-// ==========================================
+// ======================================================
 // CREATE ARTICLE
-// ==========================================
+// ======================================================
 
 exports.createArticle = (req, res) => {
 
@@ -117,64 +114,53 @@ exports.createArticle = (req, res) => {
         sizegroupid
     } = req.body;
 
-
-    // BASIC VALIDATION
-
     if (
         !articleno ||
         !articlename ||
         !categoryid ||
         !sizegroupid
     ) {
-
         return res.status(400).json({
             message: "All required fields are required"
         });
-
     }
 
-
     const articleData = {
-        articleno,
-        articlename,
-        categoryid,
-        sizegroupid
+        articleno: articleno.trim(),
+        articlename: articlename.trim(),
+        categoryid: Number(categoryid),
+        sizegroupid: Number(sizegroupid)
     };
-
 
     Article.createArticle(articleData, (err, result) => {
 
         if (err) {
 
-            if (err.code === "ER_DUP_ENTRY") {
+            console.error("CREATE ARTICLE ERROR:", err);
 
+            if (err.code === "ER_DUP_ENTRY") {
                 return res.status(409).json({
                     message: "Article number already exists"
                 });
-
             }
 
             return res.status(500).json({
                 message: "Error creating article",
-                error: err
+                error: err.message
             });
-
         }
-
 
         res.status(201).json({
             message: "Article created successfully",
             articleid: result.insertId
         });
-
     });
-
 };
 
 
-// ==========================================
+// ======================================================
 // UPDATE ARTICLE
-// ==========================================
+// ======================================================
 
 exports.updateArticle = (req, res) => {
 
@@ -188,31 +174,27 @@ exports.updateArticle = (req, res) => {
         isactive
     } = req.body;
 
-
-    // BASIC VALIDATION
-
     if (
         !articleno ||
         !articlename ||
         !categoryid ||
         !sizegroupid
     ) {
-
         return res.status(400).json({
             message: "All required fields are required"
         });
-
     }
 
-
     const articleData = {
-        articleno,
-        articlename,
-        categoryid,
-        sizegroupid,
-        isactive
+        articleno: articleno.trim(),
+        articlename: articlename.trim(),
+        categoryid: Number(categoryid),
+        sizegroupid: Number(sizegroupid),
+        isactive:
+            isactive !== undefined
+                ? Number(isactive)
+                : 1
     };
-
 
     Article.updateArticle(
         articleid,
@@ -221,83 +203,69 @@ exports.updateArticle = (req, res) => {
 
             if (err) {
 
-                if (err.code === "ER_DUP_ENTRY") {
+                console.error("UPDATE ARTICLE ERROR:", err);
 
+                if (err.code === "ER_DUP_ENTRY") {
                     return res.status(409).json({
                         message: "Article number already exists"
                     });
-
                 }
 
                 return res.status(500).json({
                     message: "Error updating article",
-                    error: err
+                    error: err.message
                 });
-
             }
 
-
             if (result.affectedRows === 0) {
-
                 return res.status(404).json({
                     message: "Article not found"
                 });
-
             }
-
 
             res.json({
                 message: "Article updated successfully"
             });
-
         }
     );
-
 };
 
 
-// ==========================================
+// ======================================================
 // DELETE ARTICLE
-// ==========================================
+// ======================================================
 
 exports.deleteArticle = (req, res) => {
 
     const articleid = req.params.id;
 
-
     Article.deleteArticle(articleid, (err, result) => {
 
         if (err) {
+            console.error("DELETE ARTICLE ERROR:", err);
 
             return res.status(500).json({
                 message: "Error deleting article",
-                error: err
+                error: err.message
             });
-
         }
 
-
         if (result.affectedRows === 0) {
-
             return res.status(404).json({
                 message: "Article not found"
             });
-
         }
-
 
         res.json({
             message: "Article deleted successfully"
         });
-
     });
-
 };
 
 
-// ==========================================
+// ======================================================
 // CREATE ARTICLE VARIANT
-// ==========================================
+// ======================================================
 
 exports.createArticleVariant = (req, res) => {
 
@@ -309,31 +277,22 @@ exports.createArticleVariant = (req, res) => {
         sizeid
     } = req.body;
 
-
-    // BASIC VALIDATION
-
     if (
         !genderid ||
         !colorid ||
         !sizeid
     ) {
-
         return res.status(400).json({
             message: "Gender, color and size are required"
         });
-
     }
 
-
     const variantData = {
-
-        articleid,
-        genderid,
-        colorid,
-        sizeid
-
+        articleid: Number(articleid),
+        genderid: Number(genderid),
+        colorid: Number(colorid),
+        sizeid: Number(sizeid)
     };
-
 
     Article.createArticleVariant(
         variantData,
@@ -341,39 +300,38 @@ exports.createArticleVariant = (req, res) => {
 
             if (err) {
 
+                console.error(
+                    "CREATE ARTICLE VARIANT ERROR:",
+                    err
+                );
+
                 if (err.code === "ER_DUP_ENTRY") {
-
                     return res.status(409).json({
-                        message: "This article variant already exists"
+                        message:
+                            "This article variant already exists"
                     });
-
                 }
 
                 return res.status(500).json({
-                    message: "Error creating article variant",
-                    error: err
+                    message:
+                        "Error creating article variant",
+                    error: err.message
                 });
-
             }
 
-
             res.status(201).json({
-
-                message: "Article variant created successfully",
-
+                message:
+                    "Article variant created successfully",
                 variantid: result.insertId
-
             });
-
         }
     );
-
 };
 
 
-// ==========================================
+// ======================================================
 // UPDATE ARTICLE VARIANT
-// ==========================================
+// ======================================================
 
 exports.updateArticleVariant = (req, res) => {
 
@@ -386,29 +344,25 @@ exports.updateArticleVariant = (req, res) => {
         isactive
     } = req.body;
 
-
     if (
         !genderid ||
         !colorid ||
         !sizeid
     ) {
-
         return res.status(400).json({
             message: "Gender, color and size are required"
         });
-
     }
 
-
     const variantData = {
-
-        genderid,
-        colorid,
-        sizeid,
-        isactive
-
+        genderid: Number(genderid),
+        colorid: Number(colorid),
+        sizeid: Number(sizeid),
+        isactive:
+            isactive !== undefined
+                ? Number(isactive)
+                : 1
     };
-
 
     Article.updateArticleVariant(
         variantid,
@@ -417,49 +371,48 @@ exports.updateArticleVariant = (req, res) => {
 
             if (err) {
 
+                console.error(
+                    "UPDATE ARTICLE VARIANT ERROR:",
+                    err
+                );
+
                 if (err.code === "ER_DUP_ENTRY") {
-
                     return res.status(409).json({
-                        message: "This article variant already exists"
+                        message:
+                            "This article variant already exists"
                     });
-
                 }
 
                 return res.status(500).json({
-                    message: "Error updating article variant",
-                    error: err
+                    message:
+                        "Error updating article variant",
+                    error: err.message
                 });
-
             }
-
 
             if (result.affectedRows === 0) {
-
                 return res.status(404).json({
-                    message: "Article variant not found"
+                    message:
+                        "Article variant not found"
                 });
-
             }
 
-
             res.json({
-                message: "Article variant updated successfully"
+                message:
+                    "Article variant updated successfully"
             });
-
         }
     );
-
 };
 
 
-// ==========================================
+// ======================================================
 // DELETE SINGLE ARTICLE VARIANT
-// ==========================================
+// ======================================================
 
 exports.deleteArticleVariant = (req, res) => {
 
     const variantid = req.params.id;
-
 
     Article.deleteArticleVariant(
         variantid,
@@ -467,41 +420,41 @@ exports.deleteArticleVariant = (req, res) => {
 
             if (err) {
 
+                console.error(
+                    "DELETE ARTICLE VARIANT ERROR:",
+                    err
+                );
+
                 return res.status(500).json({
-                    message: "Error deleting article variant",
-                    error: err
+                    message:
+                        "Error deleting article variant",
+                    error: err.message
                 });
-
             }
-
 
             if (result.affectedRows === 0) {
-
                 return res.status(404).json({
-                    message: "Article variant not found"
+                    message:
+                        "Article variant not found"
                 });
-
             }
 
-
             res.json({
-                message: "Article variant deleted successfully"
+                message:
+                    "Article variant deleted successfully"
             });
-
         }
     );
-
 };
 
 
-// ==========================================
+// ======================================================
 // DELETE ALL ARTICLE VARIANTS
-// ==========================================
+// ======================================================
 
 exports.deleteArticleVariants = (req, res) => {
 
     const articleid = req.params.id;
-
 
     Article.deleteArticleVariants(
         articleid,
@@ -509,28 +462,32 @@ exports.deleteArticleVariants = (req, res) => {
 
             if (err) {
 
-                return res.status(500).json({
-                    message: "Error deleting article variants",
-                    error: err
-                });
+                console.error(
+                    "DELETE ALL ARTICLE VARIANTS ERROR:",
+                    err
+                );
 
+                return res.status(500).json({
+                    message:
+                        "Error deleting article variants",
+                    error: err.message
+                });
             }
 
-
             res.json({
-                message: "All article variants deleted successfully",
-                deletedRows: result.affectedRows
+                message:
+                    "All article variants deleted successfully",
+                deletedRows:
+                    result.affectedRows
             });
-
         }
     );
-
 };
 
 
-// ==========================================
+// ======================================================
 // CREATE ARTICLE IMAGE
-// ==========================================
+// ======================================================
 
 exports.createArticleImage = (req, res) => {
 
@@ -542,25 +499,24 @@ exports.createArticleImage = (req, res) => {
         sortorder
     } = req.body;
 
-
     if (!imageurl) {
-
         return res.status(400).json({
             message: "Image URL is required"
         });
-
     }
 
-
     const imageData = {
-
-        articleid,
+        articleid: Number(articleid),
         imageurl,
-        isprimary: isprimary ?? false,
-        sortorder: sortorder ?? 0
-
+        isprimary:
+            isprimary !== undefined
+                ? Number(isprimary)
+                : 0,
+        sortorder:
+            sortorder !== undefined
+                ? Number(sortorder)
+                : 0
     };
-
 
     Article.createArticleImage(
         imageData,
@@ -568,31 +524,32 @@ exports.createArticleImage = (req, res) => {
 
             if (err) {
 
-                return res.status(500).json({
-                    message: "Error creating article image",
-                    error: err
-                });
+                console.error(
+                    "CREATE ARTICLE IMAGE ERROR:",
+                    err
+                );
 
+                return res.status(500).json({
+                    message:
+                        "Error creating article image",
+                    error: err.message
+                });
             }
 
-
             res.status(201).json({
-
-                message: "Article image created successfully",
-
-                imageid: result.insertId
-
+                message:
+                    "Article image created successfully",
+                imageid:
+                    result.insertId
             });
-
         }
     );
-
 };
 
 
-// ==========================================
+// ======================================================
 // UPDATE ARTICLE IMAGE
-// ==========================================
+// ======================================================
 
 exports.updateArticleImage = (req, res) => {
 
@@ -604,24 +561,23 @@ exports.updateArticleImage = (req, res) => {
         sortorder
     } = req.body;
 
-
     if (!imageurl) {
-
         return res.status(400).json({
             message: "Image URL is required"
         });
-
     }
 
-
     const imageData = {
-
         imageurl,
-        isprimary: isprimary ?? false,
-        sortorder: sortorder ?? 0
-
+        isprimary:
+            isprimary !== undefined
+                ? Number(isprimary)
+                : 0,
+        sortorder:
+            sortorder !== undefined
+                ? Number(sortorder)
+                : 0
     };
-
 
     Article.updateArticleImage(
         imageid,
@@ -630,41 +586,41 @@ exports.updateArticleImage = (req, res) => {
 
             if (err) {
 
+                console.error(
+                    "UPDATE ARTICLE IMAGE ERROR:",
+                    err
+                );
+
                 return res.status(500).json({
-                    message: "Error updating article image",
-                    error: err
+                    message:
+                        "Error updating article image",
+                    error: err.message
                 });
-
             }
-
 
             if (result.affectedRows === 0) {
-
                 return res.status(404).json({
-                    message: "Article image not found"
+                    message:
+                        "Article image not found"
                 });
-
             }
 
-
             res.json({
-                message: "Article image updated successfully"
+                message:
+                    "Article image updated successfully"
             });
-
         }
     );
-
 };
 
 
-// ==========================================
-// DELETE ARTICLE IMAGE
-// ==========================================
+// ======================================================
+// DELETE SINGLE ARTICLE IMAGE
+// ======================================================
 
 exports.deleteArticleImage = (req, res) => {
 
     const imageid = req.params.id;
-
 
     Article.deleteArticleImage(
         imageid,
@@ -672,41 +628,41 @@ exports.deleteArticleImage = (req, res) => {
 
             if (err) {
 
+                console.error(
+                    "DELETE ARTICLE IMAGE ERROR:",
+                    err
+                );
+
                 return res.status(500).json({
-                    message: "Error deleting article image",
-                    error: err
+                    message:
+                        "Error deleting article image",
+                    error: err.message
                 });
-
             }
-
 
             if (result.affectedRows === 0) {
-
                 return res.status(404).json({
-                    message: "Article image not found"
+                    message:
+                        "Article image not found"
                 });
-
             }
 
-
             res.json({
-                message: "Article image deleted successfully"
+                message:
+                    "Article image deleted successfully"
             });
-
         }
     );
-
 };
 
 
-// ==========================================
+// ======================================================
 // DELETE ALL ARTICLE IMAGES
-// ==========================================
+// ======================================================
 
 exports.deleteArticleImages = (req, res) => {
 
     const articleid = req.params.id;
-
 
     Article.deleteArticleImages(
         articleid,
@@ -714,40 +670,53 @@ exports.deleteArticleImages = (req, res) => {
 
             if (err) {
 
-                return res.status(500).json({
-                    message: "Error deleting article images",
-                    error: err
-                });
+                console.error(
+                    "DELETE ALL ARTICLE IMAGES ERROR:",
+                    err
+                );
 
+                return res.status(500).json({
+                    message:
+                        "Error deleting article images",
+                    error: err.message
+                });
             }
 
-
             res.json({
-                message: "All article images deleted successfully",
-                deletedRows: result.affectedRows
+                message:
+                    "All article images deleted successfully",
+                deletedRows:
+                    result.affectedRows
             });
-
         }
     );
-
 };
 
 
-// ==========================================
-// ARTICLE IMAGE UPLOAD
-// ==========================================
+// ======================================================
+// ARTICLE IMAGE UPLOAD - MULTER
+// ======================================================
 
+// Upload folder
 const uploadDir = path.join(
     __dirname,
     "../uploads/articles"
 );
 
+
+// Create folder if not exists
 if (!fs.existsSync(uploadDir)) {
+
     fs.mkdirSync(uploadDir, {
         recursive: true
     });
+
 }
 
+
+// ======================================================
+// MULTER STORAGE
+// ======================================================
 
 const storage = multer.diskStorage({
 
@@ -760,7 +729,9 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
 
         const ext =
-            path.extname(file.originalname);
+            path.extname(
+                file.originalname
+            ).toLowerCase();
 
         const uniqueName =
             Date.now() +
@@ -774,56 +745,150 @@ const storage = multer.diskStorage({
             null,
             uniqueName
         );
-
     }
 
 });
 
+
+// ======================================================
+// MULTER FILTER
+// ======================================================
+
+const fileFilter = (
+    req,
+    file,
+    cb
+) => {
+
+    const allowedExtensions =
+        [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif"
+        ];
+
+    const ext =
+        path
+            .extname(
+                file.originalname
+            )
+            .toLowerCase();
+
+    const allowedMimeTypes =
+        [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp",
+            "image/gif"
+        ];
+
+    if (
+        allowedExtensions.includes(ext) &&
+        allowedMimeTypes.includes(
+            file.mimetype
+        )
+    ) {
+
+        cb(null, true);
+
+    } else {
+
+        cb(
+            new Error(
+                "Only JPG, JPEG, PNG, WEBP and GIF images are allowed"
+            )
+        );
+
+    }
+
+};
+
+
+// ======================================================
+// MULTER INSTANCE
+// ======================================================
 
 const upload = multer({
 
     storage,
 
     limits: {
-        fileSize: 5 * 1024 * 1024
+
+        fileSize:
+            5 * 1024 * 1024
+
     },
 
-    fileFilter: (
-        req,
-        file,
-        cb
-    ) => {
-
-        const allowed =
-            /jpeg|jpg|png|webp|gif/;
-
-        const ext =
-            allowed.test(
-                path.extname(
-                    file.originalname
-                ).toLowerCase()
-            );
-
-        const mime =
-            allowed.test(
-                file.mimetype
-            );
-
-        if (ext && mime) {
-
-            cb(null, true);
-
-        } else {
-
-            cb(
-                new Error(
-                    "Only image files are allowed"
-                )
-            );
-
-        }
-
-    }
+    fileFilter
 
 });
 
+
+// ======================================================
+// EXPORT MULTER
+// ======================================================
+
+exports.upload = upload;
+
+
+// ======================================================
+// UPLOAD ARTICLE IMAGE
+// ======================================================
+
+exports.uploadArticleImage = (
+    req,
+    res
+) => {
+
+    try {
+
+        if (!req.file) {
+
+            return res.status(400).json({
+                message:
+                    "Image is required"
+            });
+
+        }
+
+
+        const imageurl =
+            `/uploads/articles/${req.file.filename}`;
+
+
+        console.log(
+            "ARTICLE IMAGE UPLOADED:",
+            imageurl
+        );
+
+
+        res.status(200).json({
+
+            message:
+                "Image uploaded successfully",
+
+            imageurl
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "UPLOAD ARTICLE IMAGE ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+
+            message:
+                error.message ||
+                "Image upload failed"
+
+        });
+
+    }
+
+};

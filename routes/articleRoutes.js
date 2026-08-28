@@ -89,5 +89,13 @@ router.delete(
     "/deleteimages/:id",
     articleController.deleteArticleImages
 );
+
+router.post(
+    "/uploadimage",
+    articleController.upload.single("image"),
+    articleController.uploadArticleImage
+);
+
+
 module.exports = router;
 
