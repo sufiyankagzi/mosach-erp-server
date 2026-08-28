@@ -13,7 +13,7 @@ exports.getAllOrders = (callback) => {
             o.orderno,
             o.orderdate,
             o.salespersonid,
-            sp.salespersonname,
+            sp.salesperson,
             o.totalqty,
             o.isactive,
             o.created_at
@@ -53,7 +53,7 @@ exports.getOrderById = (orderid, callback) => {
             o.orderno,
             o.orderdate,
             o.salespersonid,
-            sp.salespersonname,
+            sp.salesperson,
             o.totalqty,
             o.isactive,
             o.created_at
@@ -489,7 +489,7 @@ exports.getOrdersBySalesperson = (salespersonid, callback) => {
             o.orderno,
             o.orderdate,
             o.salespersonid,
-            sp.salespersonname,
+            sp.salesperson,
             o.totalqty,
             o.created_at
 
@@ -523,7 +523,7 @@ exports.getOrdersByDate = (orderdate, callback) => {
             o.orderno,
             o.orderdate,
             o.salespersonid,
-            sp.salespersonname,
+            sp.salesperson,
             o.totalqty,
             o.created_at
 
