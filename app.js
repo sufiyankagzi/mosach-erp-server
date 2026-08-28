@@ -16,8 +16,8 @@ const createCategoryTable = require("./config/categoryTable")
 const createColorTable = require("./config/colorTable")
 const createSizeGroupTable = require("./config/sizeGroupTable")
 const createSizeTable = require("./config/sizeTable")
-const createOrder = require("./config/orderTable")
 const {createArticleMasterTable, createArticleVariantTable, createArticleImagesTable} = require("./config/articleTable");
+const createOrderTables = require("./config/orderTable");
 // ROUTES
 
 const loginRoutes = require("./routes/loginRoutes");
@@ -31,6 +31,8 @@ const colorRoutes = require("./routes/colorRoutes")
 const sizeGroupRoutes = require("./routes/sizeGroupRoutes")
 const sizeRoutes = require("./routes/sizeRoutes")
 const articleRoutes = require("./routes/articleRoutes")
+const orderRoutes = require("./routes/orderRoutes")
+
 
 // CORS
 
@@ -40,7 +42,7 @@ const allowedOrigins = [
 ];
 
 const path = require("path");
-const createOrderTables = require("./config/orderTable");
+
 
 app.use(
     "/uploads",
@@ -113,6 +115,7 @@ app.use("/api/color",colorRoutes)
 app.use("/api/sizegroup",sizeGroupRoutes)
 app.use("/api/size",sizeRoutes)
 app.use("/api/article",articleRoutes)
+app.use("/api/order",orderRoutes)
 
 
 // ========================================
