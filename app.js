@@ -16,6 +16,7 @@ const createCategoryTable = require("./config/categoryTable")
 const createColorTable = require("./config/colorTable")
 const createSizeGroupTable = require("./config/sizeGroupTable")
 const createSizeTable = require("./config/sizeTable")
+const createOrder = require("./config/orderTable")
 const {createArticleMasterTable, createArticleVariantTable, createArticleImagesTable} = require("./config/articleTable");
 // ROUTES
 
@@ -39,6 +40,7 @@ const allowedOrigins = [
 ];
 
 const path = require("path");
+const createOrderTables = require("./config/orderTable");
 
 app.use(
     "/uploads",
@@ -129,6 +131,7 @@ createSizeTable();
 createArticleMasterTable();
 createArticleImagesTable();
 createArticleVariantTable();
+createOrderTables();
 
 // ERROR HANDLER  abc
 
