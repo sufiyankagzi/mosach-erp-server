@@ -32,6 +32,7 @@ const sizeGroupRoutes = require("./routes/sizeGroupRoutes")
 const sizeRoutes = require("./routes/sizeRoutes")
 const articleRoutes = require("./routes/articleRoutes")
 const orderRoutes = require("./routes/orderRoutes")
+const orderReportRoutes = require("./routes/orderReportRoutes");
 
 
 // CORS
@@ -116,7 +117,8 @@ app.use("/api/sizegroup",sizeGroupRoutes)
 app.use("/api/size",sizeRoutes)
 app.use("/api/article",articleRoutes)
 app.use("/api/order",orderRoutes)
-
+// REPORTS API
+app.use("/api/order/report", orderReportRoutes);
 
 // ========================================
 // TABLE CREATION
