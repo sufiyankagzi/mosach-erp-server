@@ -11,8 +11,8 @@ exports.getOrderReport = (req, res) => {
     try {
 
         const {
-            fromdate,
-            todate,
+            fromDate,
+            toDate,
             salespersonid,
             articleid,
             colorid,
@@ -25,7 +25,7 @@ exports.getOrderReport = (req, res) => {
         // DATE VALIDATION
         // =============================================
 
-        if (!fromdate && !todate) {
+        if (!fromDate || !toDate) {
 
             return res.status(400).json({
                 success: false,
@@ -40,8 +40,8 @@ exports.getOrderReport = (req, res) => {
         // =============================================
 
         const filters = {
-            fromdate,
-            todate,
+            fromDate,
+            toDate,
             salespersonid,
             articleid,
             colorid,
@@ -76,6 +76,7 @@ exports.getOrderReport = (req, res) => {
                         message: "Failed to get order report",
                         error: err.message
                     });
+
                 }
 
 
@@ -90,6 +91,7 @@ exports.getOrderReport = (req, res) => {
                     count: results.length,
 
                     data: results
+
                 });
 
             }
@@ -109,7 +111,10 @@ exports.getOrderReport = (req, res) => {
             message: "Internal Server Error",
 
             error: error.message
+
         });
+
     }
+
 };
 
