@@ -47,7 +47,7 @@ exports.getOrderReport = (filters, callback) => {
 
             col.color
 
-        FROM ordermaster om
+        FROM orders om
 
         INNER JOIN orderdetails od
             ON om.orderid = od.orderid
