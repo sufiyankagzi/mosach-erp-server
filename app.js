@@ -116,9 +116,10 @@ app.use("/api/color",colorRoutes)
 app.use("/api/sizegroup",sizeGroupRoutes)
 app.use("/api/size",sizeRoutes)
 app.use("/api/article",articleRoutes)
+app.use("/api/order/report", orderReportRoutes);
 app.use("/api/order",orderRoutes)
 // REPORTS API
-app.use("/api/order/report", orderReportRoutes);
+
 
 // ========================================
 // TABLE CREATION
