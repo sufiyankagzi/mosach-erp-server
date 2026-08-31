@@ -21,11 +21,12 @@ exports.getOrderReport = (filters, callback) => {
 
 
     let sql = `
-        SELECT
+        SELECT 
             om.orderid,
             om.orderno,
             om.orderdate,
             om.salespersonid,
+            sp.salesperson AS salesperson,
             om.totalqty,
 
             od.orderdetailid,
@@ -66,6 +67,9 @@ exports.getOrderReport = (filters, callback) => {
 
         LEFT JOIN color col
             ON od.colorid = col.colorid
+
+        LEFT JOIN salesperson sp
+            ON om.salespersonid = sp.salespersonid
 
         WHERE om.isactive = 1
     `;
@@ -194,5 +198,7 @@ exports.getOrderReport = (filters, callback) => {
         }
 
         callback(null, result);
+
     });
+
 };
