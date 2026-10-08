@@ -1,4 +1,3 @@
-
 const Article = require("../models/articleModel");
 
 const path = require("path");
@@ -59,21 +58,15 @@ exports.getArticleById = (req, res) => {
                 );
 
                 return res.status(500).json({
-                    message:
-                        "Error fetching article",
-                    error:
-                        err.message
+                    message: "Error fetching article",
+                    error: err.message
                 });
             }
 
-            if (
-                !result ||
-                result.length === 0
-            ) {
+            if (!result || result.length === 0) {
 
                 return res.status(404).json({
-                    message:
-                        "Article not found"
+                    message: "Article not found"
                 });
             }
 
@@ -87,10 +80,7 @@ exports.getArticleById = (req, res) => {
 // GET ARTICLE SIZE GROUPS
 // ======================================================
 
-exports.getArticleSizeGroups = (
-    req,
-    res
-) => {
+exports.getArticleSizeGroups = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -98,8 +88,7 @@ exports.getArticleSizeGroups = (
     if (!articleid) {
 
         return res.status(400).json({
-            message:
-                "Invalid article ID"
+            message: "Invalid article ID"
         });
     }
 
@@ -132,10 +121,7 @@ exports.getArticleSizeGroups = (
 // GET ARTICLE VARIANTS
 // ======================================================
 
-exports.getArticleVariants = (
-    req,
-    res
-) => {
+exports.getArticleVariants = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -143,8 +129,7 @@ exports.getArticleVariants = (
     if (!articleid) {
 
         return res.status(400).json({
-            message:
-                "Invalid article ID"
+            message: "Invalid article ID"
         });
     }
 
@@ -177,10 +162,7 @@ exports.getArticleVariants = (
 // GET ARTICLE IMAGES
 // ======================================================
 
-exports.getArticleImages = (
-    req,
-    res
-) => {
+exports.getArticleImages = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -188,8 +170,7 @@ exports.getArticleImages = (
     if (!articleid) {
 
         return res.status(400).json({
-            message:
-                "Invalid article ID"
+            message: "Invalid article ID"
         });
     }
 
@@ -222,10 +203,7 @@ exports.getArticleImages = (
 // CREATE ARTICLE
 // ======================================================
 
-exports.createArticle = (
-    req,
-    res
-) => {
+exports.createArticle = (req, res) => {
 
     const {
         articleno,
@@ -316,7 +294,6 @@ exports.createArticle = (
                     err
                 );
 
-
                 if (
                     err.code ===
                     "ER_DUP_ENTRY"
@@ -327,7 +304,6 @@ exports.createArticle = (
                             "Article number already exists"
                     });
                 }
-
 
                 return res.status(500).json({
                     message:
@@ -364,9 +340,7 @@ exports.createArticle = (
                                     articleid,
                                     sizegroupid
                                 },
-                                (
-                                    err
-                                ) => {
+                                (err) => {
 
                                     if (err) {
 
@@ -404,7 +378,6 @@ exports.createArticle = (
                     error
                 );
 
-
                 return res.status(500).json({
 
                     message:
@@ -425,10 +398,7 @@ exports.createArticle = (
 // UPDATE ARTICLE
 // ======================================================
 
-exports.updateArticle = (
-    req,
-    res
-) => {
+exports.updateArticle = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -535,7 +505,6 @@ exports.updateArticle = (
                     err
                 );
 
-
                 if (
                     err.code ===
                     "ER_DUP_ENTRY"
@@ -546,7 +515,6 @@ exports.updateArticle = (
                             "Article number already exists"
                     });
                 }
-
 
                 return res.status(500).json({
                     message:
@@ -620,9 +588,7 @@ exports.updateArticle = (
                                     articleid,
                                     sizegroupid
                                 },
-                                (
-                                    err
-                                ) => {
+                                (err) => {
 
                                     if (err) {
 
@@ -660,7 +626,6 @@ exports.updateArticle = (
                     error
                 );
 
-
                 return res.status(500).json({
 
                     message:
@@ -679,10 +644,7 @@ exports.updateArticle = (
 // DELETE ARTICLE
 // ======================================================
 
-exports.deleteArticle = (
-    req,
-    res
-) => {
+exports.deleteArticle = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -741,11 +703,12 @@ exports.deleteArticle = (
 // ======================================================
 // CREATE ARTICLE VARIANT
 // ======================================================
+// IMPORTANT:
+// Variant = Gender + Color + Size Group
+// NO SIZE / SIZE ID
+// ======================================================
 
-exports.createArticleVariant = (
-    req,
-    res
-) => {
+exports.createArticleVariant = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -754,8 +717,7 @@ exports.createArticleVariant = (
     const {
         genderid,
         colorid,
-        sizegroupid,
-        sizeid
+        sizegroupid
     } = req.body;
 
 
@@ -771,13 +733,12 @@ exports.createArticleVariant = (
     if (
         !genderid ||
         !colorid ||
-        !sizegroupid ||
-        !sizeid
+        !sizegroupid
     ) {
 
         return res.status(400).json({
             message:
-                "Gender, color, size group and size are required"
+                "Gender, color and size group are required"
         });
     }
 
@@ -793,10 +754,7 @@ exports.createArticleVariant = (
             Number(colorid),
 
         sizegroupid:
-            Number(sizegroupid),
-
-        sizeid:
-            Number(sizeid)
+            Number(sizegroupid)
     };
 
 
@@ -849,11 +807,11 @@ exports.createArticleVariant = (
 // ======================================================
 // UPDATE ARTICLE VARIANT
 // ======================================================
+// IMPORTANT:
+// NO SIZE / SIZE ID
+// ======================================================
 
-exports.updateArticleVariant = (
-    req,
-    res
-) => {
+exports.updateArticleVariant = (req, res) => {
 
     const variantid =
         Number(req.params.id);
@@ -872,7 +830,6 @@ exports.updateArticleVariant = (
         genderid,
         colorid,
         sizegroupid,
-        sizeid,
         isactive
     } = req.body;
 
@@ -880,13 +837,12 @@ exports.updateArticleVariant = (
     if (
         !genderid ||
         !colorid ||
-        !sizegroupid ||
-        !sizeid
+        !sizegroupid
     ) {
 
         return res.status(400).json({
             message:
-                "Gender, color, size group and size are required"
+                "Gender, color and size group are required"
         });
     }
 
@@ -901,9 +857,6 @@ exports.updateArticleVariant = (
 
         sizegroupid:
             Number(sizegroupid),
-
-        sizeid:
-            Number(sizeid),
 
         isactive:
             isactive !== undefined
@@ -971,10 +924,7 @@ exports.updateArticleVariant = (
 // DELETE SINGLE ARTICLE VARIANT
 // ======================================================
 
-exports.deleteArticleVariant = (
-    req,
-    res
-) => {
+exports.deleteArticleVariant = (req, res) => {
 
     const variantid =
         Number(req.params.id);
@@ -1034,10 +984,7 @@ exports.deleteArticleVariant = (
 // DELETE ALL ARTICLE VARIANTS
 // ======================================================
 
-exports.deleteArticleVariants = (
-    req,
-    res
-) => {
+exports.deleteArticleVariants = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -1089,10 +1036,7 @@ exports.deleteArticleVariants = (
 // CREATE ARTICLE IMAGE
 // ======================================================
 
-exports.createArticleImage = (
-    req,
-    res
-) => {
+exports.createArticleImage = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -1179,10 +1123,7 @@ exports.createArticleImage = (
 // UPDATE ARTICLE IMAGE
 // ======================================================
 
-exports.updateArticleImage = (
-    req,
-    res
-) => {
+exports.updateArticleImage = (req, res) => {
 
     const imageid =
         Number(req.params.id);
@@ -1276,10 +1217,7 @@ exports.updateArticleImage = (
 // DELETE SINGLE ARTICLE IMAGE
 // ======================================================
 
-exports.deleteArticleImage = (
-    req,
-    res
-) => {
+exports.deleteArticleImage = (req, res) => {
 
     const imageid =
         Number(req.params.id);
@@ -1339,10 +1277,7 @@ exports.deleteArticleImage = (
 // DELETE ALL ARTICLE IMAGES
 // ======================================================
 
-exports.deleteArticleImages = (
-    req,
-    res
-) => {
+exports.deleteArticleImages = (req, res) => {
 
     const articleid =
         Number(req.params.id);
@@ -1401,9 +1336,8 @@ const uploadDir = path.join(
 
 
 // Create upload directory
-if (
-    !fs.existsSync(uploadDir)
-) {
+
+if (!fs.existsSync(uploadDir)) {
 
     fs.mkdirSync(
         uploadDir,
@@ -1499,12 +1433,8 @@ const fileFilter = (
 
 
     if (
-        allowedExtensions.includes(
-            ext
-        ) &&
-        allowedMimeTypes.includes(
-            file.mimetype
-        )
+        allowedExtensions.includes(ext) &&
+        allowedMimeTypes.includes(file.mimetype)
     ) {
 
         cb(
@@ -1552,10 +1482,7 @@ exports.upload = upload;
 // UPLOAD ARTICLE IMAGE
 // ======================================================
 
-exports.uploadArticleImage = (
-    req,
-    res
-) => {
+exports.uploadArticleImage = (req, res) => {
 
     try {
 
@@ -1586,7 +1513,6 @@ exports.uploadArticleImage = (
             imageurl
         });
 
-
     } catch (error) {
 
         console.error(
@@ -1603,4 +1529,3 @@ exports.uploadArticleImage = (
         });
     }
 };
-
