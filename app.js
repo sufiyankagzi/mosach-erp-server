@@ -16,7 +16,7 @@ const createCategoryTable = require("./config/categoryTable")
 const createColorTable = require("./config/colorTable")
 const createSizeGroupTable = require("./config/sizeGroupTable")
 const createSizeTable = require("./config/sizeTable")
-const {createArticleMasterTable, createArticleVariantTable, createArticleImagesTable} = require("./config/articleTable");
+const {createArticleMasterTable, createArticleSizeGroupTable,createArticleVariantTable, createArticleImagesTable} = require("./config/articleTable");
 const createOrderTables = require("./config/orderTable");
 // ROUTES
 
@@ -137,6 +137,7 @@ createSizeTable();
 createArticleMasterTable();
 createArticleImagesTable();
 createArticleVariantTable();
+createArticleSizeGroupTable();
 createOrderTables();
 
 // ERROR HANDLER  abc
