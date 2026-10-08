@@ -1,5 +1,5 @@
-
 const db = require("../config/connectdb");
+
 
 // ======================================================
 // GET ALL ARTICLES
@@ -73,7 +73,11 @@ exports.getArticleById = (articleid, callback) => {
         WHERE a.articleid = ?
     `;
 
-    db.query(sql, [articleid], callback);
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
 };
 
 
@@ -81,7 +85,10 @@ exports.getArticleById = (articleid, callback) => {
 // GET ARTICLE SIZE GROUPS
 // ======================================================
 
-exports.getArticleSizeGroups = (articleid, callback) => {
+exports.getArticleSizeGroups = (
+    articleid,
+    callback
+) => {
 
     const sql = `
         SELECT
@@ -100,7 +107,11 @@ exports.getArticleSizeGroups = (articleid, callback) => {
         ORDER BY asg.id ASC
     `;
 
-    db.query(sql, [articleid], callback);
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
 };
 
 
@@ -108,7 +119,10 @@ exports.getArticleSizeGroups = (articleid, callback) => {
 // ADD ARTICLE SIZE GROUP
 // ======================================================
 
-exports.createArticleSizeGroup = (data, callback) => {
+exports.createArticleSizeGroup = (
+    data,
+    callback
+) => {
 
     const {
         articleid,
@@ -139,7 +153,10 @@ exports.createArticleSizeGroup = (data, callback) => {
 // DELETE ALL ARTICLE SIZE GROUPS
 // ======================================================
 
-exports.deleteArticleSizeGroups = (articleid, callback) => {
+exports.deleteArticleSizeGroups = (
+    articleid,
+    callback
+) => {
 
     const sql = `
         DELETE FROM articlesizegroup
@@ -157,8 +174,19 @@ exports.deleteArticleSizeGroups = (articleid, callback) => {
 // ======================================================
 // GET ARTICLE VARIANTS
 // ======================================================
+// IMPORTANT:
+// Variant contains ONLY:
+// Gender + Color + Size Group
+//
+// NO SIZE
+// NO sizeid
+// NO size table JOIN
+// ======================================================
 
-exports.getArticleVariants = (articleid, callback) => {
+exports.getArticleVariants = (
+    articleid,
+    callback
+) => {
 
     const sql = `
         SELECT
@@ -174,9 +202,6 @@ exports.getArticleVariants = (articleid, callback) => {
             av.sizegroupid,
             sg.sizegroup,
 
-            av.sizeid,
-            s.size,
-
             av.isactive,
             av.created_at
 
@@ -190,9 +215,6 @@ exports.getArticleVariants = (articleid, callback) => {
 
         LEFT JOIN sizegroup sg
             ON av.sizegroupid = sg.sizegroupid
-
-        LEFT JOIN size s
-            ON av.sizeid = s.sizeid
 
         WHERE av.articleid = ?
 
@@ -212,7 +234,10 @@ exports.getArticleVariants = (articleid, callback) => {
 // GET ARTICLE IMAGES
 // ======================================================
 
-exports.getArticleImages = (articleid, callback) => {
+exports.getArticleImages = (
+    articleid,
+    callback
+) => {
 
     const sql = `
         SELECT
@@ -244,7 +269,10 @@ exports.getArticleImages = (articleid, callback) => {
 // CREATE ARTICLE
 // ======================================================
 
-exports.createArticle = (articleData, callback) => {
+exports.createArticle = (
+    articleData,
+    callback
+) => {
 
     const {
         articleno,
@@ -320,7 +348,10 @@ exports.updateArticle = (
 // DELETE ARTICLE
 // ======================================================
 
-exports.deleteArticle = (articleid, callback) => {
+exports.deleteArticle = (
+    articleid,
+    callback
+) => {
 
     const sql = `
         DELETE FROM articlemaster
@@ -336,7 +367,10 @@ exports.deleteArticle = (articleid, callback) => {
 
 
 // ======================================================
-// ADD ARTICLE VARIANT
+// CREATE ARTICLE VARIANT
+// ======================================================
+// IMPORTANT:
+// Gender + Color + Size Group ONLY
 // ======================================================
 
 exports.createArticleVariant = (
@@ -348,8 +382,7 @@ exports.createArticleVariant = (
         articleid,
         genderid,
         colorid,
-        sizegroupid,
-        sizeid
+        sizegroupid
     } = variantData;
 
     const sql = `
@@ -358,10 +391,9 @@ exports.createArticleVariant = (
             articleid,
             genderid,
             colorid,
-            sizegroupid,
-            sizeid
+            sizegroupid
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?)
     `;
 
     db.query(
@@ -370,8 +402,7 @@ exports.createArticleVariant = (
             articleid,
             genderid,
             colorid,
-            sizegroupid,
-            sizeid
+            sizegroupid
         ],
         callback
     );
@@ -380,6 +411,9 @@ exports.createArticleVariant = (
 
 // ======================================================
 // UPDATE ARTICLE VARIANT
+// ======================================================
+// IMPORTANT:
+// NO SIZE / SIZE ID
 // ======================================================
 
 exports.updateArticleVariant = (
@@ -392,7 +426,6 @@ exports.updateArticleVariant = (
         genderid,
         colorid,
         sizegroupid,
-        sizeid,
         isactive
     } = variantData;
 
@@ -402,7 +435,6 @@ exports.updateArticleVariant = (
             genderid = ?,
             colorid = ?,
             sizegroupid = ?,
-            sizeid = ?,
             isactive = ?
 
         WHERE variantid = ?
@@ -414,7 +446,6 @@ exports.updateArticleVariant = (
             genderid,
             colorid,
             sizegroupid,
-            sizeid,
             isactive,
             variantid
         ],
@@ -468,7 +499,7 @@ exports.deleteArticleVariants = (
 
 
 // ======================================================
-// ADD ARTICLE IMAGE
+// CREATE ARTICLE IMAGE
 // ======================================================
 
 exports.createArticleImage = (
@@ -588,4 +619,3 @@ exports.deleteArticleImages = (
         callback
     );
 };
-
