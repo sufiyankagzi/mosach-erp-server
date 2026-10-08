@@ -11,6 +11,7 @@ const createCompanyTable = require("./config/companyCreateTable");
 const createUserTable = require("./config/userTable");
 const createSalesPersonTable = require("./config/salesPersonTable");
 const createGenderTable = require("./config/genderTable")
+const createMaterialTable = require("./config/materialTable")
 const createGroupTable = require("./config/groupTable")
 const createCategoryTable = require("./config/categoryTable")
 const createColorTable = require("./config/colorTable")
@@ -26,6 +27,7 @@ const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const salespersonRoutes = require("./routes/salespersonRoutes");
 const genderRoutes = require("./routes/genderRoutes")
+const materialRoutes = require("./routes/materialRoutes")
 const categoryRoutes = require("./routes/categoryRoutes")
 const colorRoutes = require("./routes/colorRoutes")
 const sizeGroupRoutes = require("./routes/sizeGroupRoutes")
@@ -111,6 +113,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/salesperson", salespersonRoutes )
 app.use("/api/gender",genderRoutes);
+app.use("/api/material",materialRoutes);
 app.use("/api/category",categoryRoutes)
 app.use("/api/color",colorRoutes)
 app.use("/api/sizegroup",sizeGroupRoutes)
@@ -139,6 +142,7 @@ createArticleSizeGroupTable();
 createArticleVariantTable();
 createArticleImagesTable();
 createOrderTables();
+createMaterialTable();
 
 // ERROR HANDLER  abc
 
