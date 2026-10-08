@@ -36,6 +36,7 @@ const sizeRoutes = require("./routes/sizeRoutes")
 const articleRoutes = require("./routes/articleRoutes")
 const orderRoutes = require("./routes/orderRoutes")
 const orderReportRoutes = require("./routes/orderReportRoutes");
+const articleBomRoutes = require("./routes/articleBomRoutes");
 
 
 // CORS
@@ -122,6 +123,7 @@ app.use("/api/size",sizeRoutes)
 app.use("/api/article",articleRoutes)
 app.use("/api/order/report", orderReportRoutes);
 app.use("/api/order",orderRoutes)
+app.use("/api/articlebom",articleBomRoutes);
 // REPORTS API
 
 
