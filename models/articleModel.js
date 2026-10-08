@@ -1,9 +1,9 @@
+
 const db = require("../config/connectdb");
 
-
-// ==========================================
+// ======================================================
 // GET ALL ARTICLES
-// ==========================================
+// ======================================================
 
 exports.getAllArticles = (callback) => {
 
@@ -14,8 +14,6 @@ exports.getAllArticles = (callback) => {
             a.articlename,
             a.categoryid,
             c.category,
-            a.sizegroupid,
-            sg.sizegroup,
             a.isactive,
             a.created_at,
 
@@ -25,15 +23,24 @@ exports.getAllArticles = (callback) => {
                 WHERE ai.articleid = a.articleid
                 ORDER BY ai.isprimary DESC, ai.sortorder ASC
                 LIMIT 1
-            ) AS imageurl
+            ) AS imageurl,
+
+            (
+                SELECT GROUP_CONCAT(
+                    DISTINCT sg.sizegroup
+                    ORDER BY sg.sizegroup
+                    SEPARATOR ', '
+                )
+                FROM articlesizegroup asg
+                INNER JOIN sizegroup sg
+                    ON asg.sizegroupid = sg.sizegroupid
+                WHERE asg.articleid = a.articleid
+            ) AS sizegroups
 
         FROM articlemaster a
 
         LEFT JOIN category c
             ON a.categoryid = c.categoryid
-
-        LEFT JOIN sizegroup sg
-            ON a.sizegroupid = sg.sizegroupid
 
         ORDER BY a.articleid DESC
     `;
@@ -42,9 +49,9 @@ exports.getAllArticles = (callback) => {
 };
 
 
-// ==========================================
+// ======================================================
 // GET ARTICLE BY ID
-// ==========================================
+// ======================================================
 
 exports.getArticleById = (articleid, callback) => {
 
@@ -55,8 +62,6 @@ exports.getArticleById = (articleid, callback) => {
             a.articlename,
             a.categoryid,
             c.category,
-            a.sizegroupid,
-            sg.sizegroup,
             a.isactive,
             a.created_at
 
@@ -65,9 +70,6 @@ exports.getArticleById = (articleid, callback) => {
         LEFT JOIN category c
             ON a.categoryid = c.categoryid
 
-        LEFT JOIN sizegroup sg
-            ON a.sizegroupid = sg.sizegroupid
-
         WHERE a.articleid = ?
     `;
 
@@ -75,9 +77,86 @@ exports.getArticleById = (articleid, callback) => {
 };
 
 
-// ==========================================
+// ======================================================
+// GET ARTICLE SIZE GROUPS
+// ======================================================
+
+exports.getArticleSizeGroups = (articleid, callback) => {
+
+    const sql = `
+        SELECT
+            asg.id,
+            asg.articleid,
+            asg.sizegroupid,
+            sg.sizegroup
+
+        FROM articlesizegroup asg
+
+        INNER JOIN sizegroup sg
+            ON asg.sizegroupid = sg.sizegroupid
+
+        WHERE asg.articleid = ?
+
+        ORDER BY asg.id ASC
+    `;
+
+    db.query(sql, [articleid], callback);
+};
+
+
+// ======================================================
+// ADD ARTICLE SIZE GROUP
+// ======================================================
+
+exports.createArticleSizeGroup = (data, callback) => {
+
+    const {
+        articleid,
+        sizegroupid
+    } = data;
+
+    const sql = `
+        INSERT INTO articlesizegroup
+        (
+            articleid,
+            sizegroupid
+        )
+        VALUES (?, ?)
+    `;
+
+    db.query(
+        sql,
+        [
+            articleid,
+            sizegroupid
+        ],
+        callback
+    );
+};
+
+
+// ======================================================
+// DELETE ALL ARTICLE SIZE GROUPS
+// ======================================================
+
+exports.deleteArticleSizeGroups = (articleid, callback) => {
+
+    const sql = `
+        DELETE FROM articlesizegroup
+        WHERE articleid = ?
+    `;
+
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
+};
+
+
+// ======================================================
 // GET ARTICLE VARIANTS
-// ==========================================
+// ======================================================
 
 exports.getArticleVariants = (articleid, callback) => {
 
@@ -92,11 +171,11 @@ exports.getArticleVariants = (articleid, callback) => {
             av.colorid,
             c.color,
 
+            av.sizegroupid,
+            sg.sizegroup,
+
             av.sizeid,
             s.size,
-
-            s.sizegroupid,
-            sg.sizegroup,
 
             av.isactive,
             av.created_at
@@ -109,23 +188,29 @@ exports.getArticleVariants = (articleid, callback) => {
         LEFT JOIN color c
             ON av.colorid = c.colorid
 
+        LEFT JOIN sizegroup sg
+            ON av.sizegroupid = sg.sizegroupid
+
         LEFT JOIN size s
             ON av.sizeid = s.sizeid
 
-        LEFT JOIN sizegroup sg
-            ON s.sizegroupid = sg.sizegroupid
-
         WHERE av.articleid = ?
 
-        ORDER BY av.variantid ASC
+        ORDER BY
+            av.variantid ASC
     `;
 
-    db.query(sql, [articleid], callback);
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
 };
 
-// ==========================================
+
+// ======================================================
 // GET ARTICLE IMAGES
-// ==========================================
+// ======================================================
 
 exports.getArticleImages = (articleid, callback) => {
 
@@ -142,24 +227,29 @@ exports.getArticleImages = (articleid, callback) => {
 
         WHERE articleid = ?
 
-        ORDER BY isprimary DESC, sortorder ASC
+        ORDER BY
+            isprimary DESC,
+            sortorder ASC
     `;
 
-    db.query(sql, [articleid], callback);
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
 };
 
 
-// ==========================================
+// ======================================================
 // CREATE ARTICLE
-// ==========================================
+// ======================================================
 
 exports.createArticle = (articleData, callback) => {
 
     const {
         articleno,
         articlename,
-        categoryid,
-        sizegroupid
+        categoryid
     } = articleData;
 
     const sql = `
@@ -167,10 +257,9 @@ exports.createArticle = (articleData, callback) => {
         (
             articleno,
             articlename,
-            categoryid,
-            sizegroupid
+            categoryid
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?)
     `;
 
     db.query(
@@ -178,25 +267,27 @@ exports.createArticle = (articleData, callback) => {
         [
             articleno,
             articlename,
-            categoryid,
-            sizegroupid
+            categoryid
         ],
         callback
     );
 };
 
 
-// ==========================================
+// ======================================================
 // UPDATE ARTICLE
-// ==========================================
+// ======================================================
 
-exports.updateArticle = (articleid, articleData, callback) => {
+exports.updateArticle = (
+    articleid,
+    articleData,
+    callback
+) => {
 
     const {
         articleno,
         articlename,
         categoryid,
-        sizegroupid,
         isactive
     } = articleData;
 
@@ -206,8 +297,8 @@ exports.updateArticle = (articleid, articleData, callback) => {
             articleno = ?,
             articlename = ?,
             categoryid = ?,
-            sizegroupid = ?,
             isactive = ?
+
         WHERE articleid = ?
     `;
 
@@ -217,7 +308,6 @@ exports.updateArticle = (articleid, articleData, callback) => {
             articleno,
             articlename,
             categoryid,
-            sizegroupid,
             isactive,
             articleid
         ],
@@ -226,9 +316,9 @@ exports.updateArticle = (articleid, articleData, callback) => {
 };
 
 
-// ==========================================
+// ======================================================
 // DELETE ARTICLE
-// ==========================================
+// ======================================================
 
 exports.deleteArticle = (articleid, callback) => {
 
@@ -237,20 +327,28 @@ exports.deleteArticle = (articleid, callback) => {
         WHERE articleid = ?
     `;
 
-    db.query(sql, [articleid], callback);
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
 };
 
 
-// ==========================================
+// ======================================================
 // ADD ARTICLE VARIANT
-// ==========================================
+// ======================================================
 
-exports.createArticleVariant = (variantData, callback) => {
+exports.createArticleVariant = (
+    variantData,
+    callback
+) => {
 
     const {
         articleid,
         genderid,
         colorid,
+        sizegroupid,
         sizeid
     } = variantData;
 
@@ -260,9 +358,10 @@ exports.createArticleVariant = (variantData, callback) => {
             articleid,
             genderid,
             colorid,
+            sizegroupid,
             sizeid
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -271,21 +370,28 @@ exports.createArticleVariant = (variantData, callback) => {
             articleid,
             genderid,
             colorid,
+            sizegroupid,
             sizeid
         ],
         callback
     );
 };
 
-// ==========================================
-// UPDATE ARTICLE VARIANT
-// ==========================================
 
-exports.updateArticleVariant = (variantid, variantData, callback) => {
+// ======================================================
+// UPDATE ARTICLE VARIANT
+// ======================================================
+
+exports.updateArticleVariant = (
+    variantid,
+    variantData,
+    callback
+) => {
 
     const {
         genderid,
         colorid,
+        sizegroupid,
         sizeid,
         isactive
     } = variantData;
@@ -295,8 +401,10 @@ exports.updateArticleVariant = (variantid, variantData, callback) => {
         SET
             genderid = ?,
             colorid = ?,
+            sizegroupid = ?,
             sizeid = ?,
             isactive = ?
+
         WHERE variantid = ?
     `;
 
@@ -305,6 +413,7 @@ exports.updateArticleVariant = (variantid, variantData, callback) => {
         [
             genderid,
             colorid,
+            sizegroupid,
             sizeid,
             isactive,
             variantid
@@ -313,40 +422,59 @@ exports.updateArticleVariant = (variantid, variantData, callback) => {
     );
 };
 
-// ==========================================
-// DELETE SINGLE ARTICLE VARIANT
-// ==========================================
 
-exports.deleteArticleVariant = (variantid, callback) => {
+// ======================================================
+// DELETE SINGLE ARTICLE VARIANT
+// ======================================================
+
+exports.deleteArticleVariant = (
+    variantid,
+    callback
+) => {
 
     const sql = `
         DELETE FROM articlevariant
         WHERE variantid = ?
     `;
 
-    db.query(sql, [variantid], callback);
+    db.query(
+        sql,
+        [variantid],
+        callback
+    );
 };
 
-// ==========================================
-// DELETE ALL ARTICLE VARIANTS
-// ==========================================
 
-exports.deleteArticleVariants = (articleid, callback) => {
+// ======================================================
+// DELETE ALL ARTICLE VARIANTS
+// ======================================================
+
+exports.deleteArticleVariants = (
+    articleid,
+    callback
+) => {
 
     const sql = `
         DELETE FROM articlevariant
         WHERE articleid = ?
     `;
 
-    db.query(sql, [articleid], callback);
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
 };
 
 
-// ==========================================
+// ======================================================
 // ADD ARTICLE IMAGE
-// ==========================================
+// ======================================================
 
-exports.createArticleImage = (imageData, callback) => {
+exports.createArticleImage = (
+    imageData,
+    callback
+) => {
 
     const {
         articleid,
@@ -378,11 +506,16 @@ exports.createArticleImage = (imageData, callback) => {
     );
 };
 
-// ==========================================
-// UPDATE ARTICLE IMAGE
-// ==========================================
 
-exports.updateArticleImage = (imageid, imageData, callback) => {
+// ======================================================
+// UPDATE ARTICLE IMAGE
+// ======================================================
+
+exports.updateArticleImage = (
+    imageid,
+    imageData,
+    callback
+) => {
 
     const {
         imageurl,
@@ -396,6 +529,7 @@ exports.updateArticleImage = (imageid, imageData, callback) => {
             imageurl = ?,
             isprimary = ?,
             sortorder = ?
+
         WHERE imageid = ?
     `;
 
@@ -411,31 +545,47 @@ exports.updateArticleImage = (imageid, imageData, callback) => {
     );
 };
 
-// ==========================================
-// DELETE ARTICLE IMAGE
-// ==========================================
 
-exports.deleteArticleImage = (imageid, callback) => {
+// ======================================================
+// DELETE SINGLE ARTICLE IMAGE
+// ======================================================
+
+exports.deleteArticleImage = (
+    imageid,
+    callback
+) => {
 
     const sql = `
         DELETE FROM articleimages
         WHERE imageid = ?
     `;
 
-    db.query(sql, [imageid], callback);
+    db.query(
+        sql,
+        [imageid],
+        callback
+    );
 };
 
 
-// ==========================================
+// ======================================================
 // DELETE ALL ARTICLE IMAGES
-// ==========================================
+// ======================================================
 
-exports.deleteArticleImages = (articleid, callback) => {
+exports.deleteArticleImages = (
+    articleid,
+    callback
+) => {
 
     const sql = `
         DELETE FROM articleimages
         WHERE articleid = ?
     `;
 
-    db.query(sql, [articleid], callback);
+    db.query(
+        sql,
+        [articleid],
+        callback
+    );
 };
+

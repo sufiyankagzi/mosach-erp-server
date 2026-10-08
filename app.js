@@ -135,9 +135,9 @@ createColorTable();
 createSizeGroupTable();
 createSizeTable();
 createArticleMasterTable();
-createArticleImagesTable();
-createArticleVariantTable();
 createArticleSizeGroupTable();
+createArticleVariantTable();
+createArticleImagesTable();
 createOrderTables();
 
 // ERROR HANDLER  abc
