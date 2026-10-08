@@ -11,6 +11,7 @@ const createCompanyTable = require("./config/companyCreateTable");
 const createUserTable = require("./config/userTable");
 const createSalesPersonTable = require("./config/salesPersonTable");
 const createGenderTable = require("./config/genderTable")
+const createArticleBOMTable = require("./config/articleBOMTable")
 const createMaterialTable = require("./config/materialTable")
 const createGroupTable = require("./config/groupTable")
 const createCategoryTable = require("./config/categoryTable")
@@ -143,6 +144,7 @@ createArticleVariantTable();
 createArticleImagesTable();
 createOrderTables();
 createMaterialTable();
+createArticleBOMTable();
 
 // ERROR HANDLER  abc
 
