@@ -1,69 +1,43 @@
     const db = require("../config/connectdb");
 
 
-    // ======================================================
-// GET ALL ARTICLE BOM
-// ======================================================
-
-const getAllArticleBom = (callback) => {
+    const getAllArticleBom = (callback) => {
     const sql = `
         SELECT
             ab.*,
-
             a.articleno AS articleno,
             a.articlename AS articlename,
-
             uppermat.material AS upperrexine,
             insolemat.material AS insolerexine,
             epdmmat.material AS epdm,
             liningmat.material AS lining,
-            compmat.material AS components,
-
-            other1mat.material AS other1,
-            other2mat.material AS other2,
-            other3mat.material AS other3,
-            other4mat.material AS other4,
-            other5mat.material AS other5
-
+            compmat.material AS components
         FROM articlebom ab
-
         LEFT JOIN articlemaster a
             ON a.articleid = ab.articleid
-
         LEFT JOIN material uppermat
             ON uppermat.materialid = ab.upperrexineid
-
         LEFT JOIN material insolemat
             ON insolemat.materialid = ab.insolerexineid
-
         LEFT JOIN material epdmmat
             ON epdmmat.materialid = ab.epdmid
-
         LEFT JOIN material liningmat
             ON liningmat.materialid = ab.liningid
-
         LEFT JOIN material compmat
             ON compmat.materialid = ab.componentsid
-
-        LEFT JOIN material other1mat
-            ON other1mat.materialid = ab.other1id
-
-        LEFT JOIN material other2mat
-            ON other2mat.materialid = ab.other2id
-
-        LEFT JOIN material other3mat
-            ON other3mat.materialid = ab.other3id
-
-        LEFT JOIN material other4mat
-            ON other4mat.materialid = ab.other4id
-
-        LEFT JOIN material other5mat
-            ON other5mat.materialid = ab.other5id
-
         ORDER BY ab.articlebomid DESC
     `;
 
-    db.query(sql, callback);
+    db.query(sql, (err, rows) => {
+        if (err) {
+            console.error("GET ARTICLE BOM ERROR:", err);
+            return callback(err);
+        }
+
+        console.log("ARTICLE BOM API DATA:", rows);
+
+        callback(null, rows);
+    });
 };
 
     // ======================================================
