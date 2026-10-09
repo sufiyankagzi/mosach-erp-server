@@ -27,7 +27,7 @@ const getAllArticleBom = (callback) => {
 
         FROM articlebom ab
 
-        LEFT JOIN article a
+        LEFT JOIN articlemaster a
             ON a.articleid = ab.articleid
 
         LEFT JOIN material uppermat
