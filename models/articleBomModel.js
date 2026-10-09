@@ -10,6 +10,9 @@ const getAllArticleBom = (callback) => {
         SELECT
             ab.*,
 
+            a.articleno AS articleno,
+            a.articlename AS articlename,
+
             uppermat.material AS upperrexine,
             insolemat.material AS insolerexine,
             epdmmat.material AS epdm,
@@ -23,6 +26,9 @@ const getAllArticleBom = (callback) => {
             other5mat.material AS other5
 
         FROM articlebom ab
+
+        LEFT JOIN article a
+            ON a.articleid = ab.articleid
 
         LEFT JOIN material uppermat
             ON uppermat.materialid = ab.upperrexineid
