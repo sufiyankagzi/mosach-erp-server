@@ -15,13 +15,13 @@ const getAllArticleBom = (callback) => {
             a.articlename AS articlename,
 
             /* CATEGORY */
-            c.category AS category,
+           c.category AS categoryname,
 
             /* COLOR */
-            col.color AS color,
+            col.color AS colorname, 
 
             /* SIZE GROUP */
-            sg.sizegroup AS sizegroup,
+            sg.sizegroup AS sizegroupname,
 
             /* MATERIALS */
             uppermat.material AS upperrexine,
