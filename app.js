@@ -20,6 +20,10 @@ const createSizeGroupTable = require("./config/sizeGroupTable")
 const createSizeTable = require("./config/sizeTable")
 const {createArticleMasterTable, createArticleSizeGroupTable,createArticleVariantTable, createArticleImagesTable} = require("./config/articleTable");
 const createOrderTables = require("./config/orderTable");
+const {
+    createProductionReportTable
+} = require("./config/productionreportTable");
+
 // ROUTES
 
 const loginRoutes = require("./routes/loginRoutes");
@@ -37,6 +41,7 @@ const articleRoutes = require("./routes/articleRoutes")
 const orderRoutes = require("./routes/orderRoutes")
 const orderReportRoutes = require("./routes/orderReportRoutes");
 const articleBomRoutes = require("./routes/articleBomRoutes");
+const productionReportRoutes = require("./routes/productionReportRoutes");
 
 
 // CORS
@@ -124,6 +129,7 @@ app.use("/api/article",articleRoutes)
 app.use("/api/order/report", orderReportRoutes);
 app.use("/api/order",orderRoutes)
 app.use("/api/articlebom",articleBomRoutes);
+app.use("/api/production-report", productionReportRoutes);
 // REPORTS API
 
 
@@ -147,6 +153,7 @@ createArticleImagesTable();
 createOrderTables();
 createMaterialTable();
 createArticleBOMTable();
+createProductionReportTable();
 
 // ERROR HANDLER  abc
 
