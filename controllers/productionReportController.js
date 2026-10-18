@@ -410,7 +410,8 @@ const uploadProductionExcel = async (req, res) => {
 
                 totalRowsRead: dataRows.length,
 
-                insertedRows: result.affectedRows,
+                insertedRows: result.insertedRows,
+updatedRows: result.updatedRows,
 
                 skippedRows
 
