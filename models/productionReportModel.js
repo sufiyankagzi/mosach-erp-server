@@ -8,116 +8,157 @@ const db = require("../config/connectdb");
 
 
 // ======================================================
-// 1. INSERT PRODUCTION REPORT DATA
+// 1. INSERT OR UPDATE PRODUCTION REPORT DATA
+// MOSACH ERP
+// Job Card No. is UNIQUE
 // ======================================================
 
 const insertProductionRows = (rows) => {
 
-    return new Promise((resolve, reject) => {
 
-        if (!Array.isArray(rows) || rows.length === 0) {
-            return resolve({
-                affectedRows: 0
-            });
+return new Promise((resolve, reject) => {
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return resolve({
+            affectedRows: 0,
+            insertedRows: 0,
+            updatedRows: 0
+        });
+    }
+
+    const sql = `
+        INSERT INTO productionreport (
+
+            sku,
+            reportdate,
+            jobcard,
+            article,
+            colour,
+            size,
+            pair,
+
+            cuttingreceiveddate,
+            cuttingcontractor,
+
+            uppercontractor,
+            upperissuedate,
+            upperreceiveddate,
+            upperreceivedpair,
+
+            upperinsolecontractor,
+            upperinsoleissueddate,
+
+            upperstorereceiveddate,
+            upperstorepairqty,
+            upperstorestatus,
+
+            machineno,
+            machineissuedate,
+            machinepairqty,
+
+            firstpair,
+            secondpair,
+            rejection,
+            totalpair,
+
+            uploadbatchid
+
+        )
+        VALUES ?
+
+        ON DUPLICATE KEY UPDATE
+
+            sku = VALUES(sku),
+            reportdate = VALUES(reportdate),
+            article = VALUES(article),
+            colour = VALUES(colour),
+            size = VALUES(size),
+            pair = VALUES(pair),
+
+            cuttingreceiveddate = VALUES(cuttingreceiveddate),
+            cuttingcontractor = VALUES(cuttingcontractor),
+
+            uppercontractor = VALUES(uppercontractor),
+            upperissuedate = VALUES(upperissuedate),
+            upperreceiveddate = VALUES(upperreceiveddate),
+            upperreceivedpair = VALUES(upperreceivedpair),
+
+            upperinsolecontractor = VALUES(upperinsolecontractor),
+            upperinsoleissueddate = VALUES(upperinsoleissueddate),
+
+            upperstorereceiveddate = VALUES(upperstorereceiveddate),
+            upperstorepairqty = VALUES(upperstorepairqty),
+            upperstorestatus = VALUES(upperstorestatus),
+
+            machineno = VALUES(machineno),
+            machineissuedate = VALUES(machineissuedate),
+            machinepairqty = VALUES(machinepairqty),
+
+            firstpair = VALUES(firstpair),
+            secondpair = VALUES(secondpair),
+            rejection = VALUES(rejection),
+            totalpair = VALUES(totalpair),
+
+            uploadbatchid = VALUES(uploadbatchid)
+    `;
+
+    const values = rows.map(row => [
+
+        row.sku ?? null,
+        row.reportdate ?? null,
+        row.jobcard ?? null,
+        row.article ?? null,
+        row.colour ?? null,
+        row.size ?? null,
+        row.pair ?? 0,
+
+        row.cuttingreceiveddate ?? null,
+        row.cuttingcontractor ?? null,
+
+        row.uppercontractor ?? null,
+        row.upperissuedate ?? null,
+        row.upperreceiveddate ?? null,
+        row.upperreceivedpair ?? 0,
+
+        row.upperinsolecontractor ?? null,
+        row.upperinsoleissuedate ?? null,
+
+        row.upperstorereceiveddate ?? null,
+        row.upperstorepairqty ?? 0,
+        row.upperstorestatus ?? null,
+
+        row.machineno ?? null,
+        row.machineissuedate ?? null,
+        row.machinepairqty ?? 0,
+
+        row.firstpair ?? 0,
+        row.secondpair ?? 0,
+        row.rejection ?? 0,
+        row.totalpair ?? 0,
+
+        row.uploadbatchid ?? null
+
+    ]);
+
+    db.query(sql, [values], (err, result) => {
+
+        if (err) {
+            console.error(
+                "Insert/Update Production Report Error:",
+                err
+            );
+
+            return reject(err);
         }
 
-        const sql = `
-            INSERT INTO productionreport (
-
-                sku,
-                reportdate,
-                jobcard,
-                article,
-                colour,
-                size,
-                pair,
-
-                cuttingreceiveddate,
-                cuttingcontractor,
-
-                uppercontractor,
-                upperissuedate,
-                upperreceiveddate,
-                upperreceivedpair,
-
-                upperinsolecontractor,
-                upperinsoleissueddate,
-
-                upperstorereceiveddate,
-                upperstorepairqty,
-                upperstorestatus,
-
-                machineno,
-                machineissuedate,
-                machinepairqty,
-
-                firstpair,
-                secondpair,
-                rejection,
-                totalpair,
-
-                uploadbatchid
-
-            )
-            VALUES ?
-        `;
-
-        const values = rows.map(row => [
-
-            row.sku ?? null,
-            row.reportdate ?? null,
-            row.jobcard ?? null,
-            row.article ?? null,
-            row.colour ?? null,
-            row.size ?? null,
-            row.pair ?? 0,
-
-            row.cuttingreceiveddate ?? null,
-            row.cuttingcontractor ?? null,
-
-            row.uppercontractor ?? null,
-            row.upperissuedate ?? null,
-            row.upperreceiveddate ?? null,
-            row.upperreceivedpair ?? 0,
-
-            row.upperinsolecontractor ?? null,
-            row.upperinsoleissueddate ?? null,
-
-            row.upperstorereceiveddate ?? null,
-            row.upperstorepairqty ?? 0,
-            row.upperstorestatus ?? null,
-
-            row.machineno ?? null,
-            row.machineissuedate ?? null,
-            row.machinepairqty ?? 0,
-
-            row.firstpair ?? 0,
-            row.secondpair ?? 0,
-            row.rejection ?? 0,
-            row.totalpair ?? 0,
-
-            row.uploadbatchid ?? null
-
-        ]);
-
-        db.query(sql, [values], (err, result) => {
-
-            if (err) {
-                console.error(
-                    "Insert Production Report Error:",
-                    err
-                );
-
-                return reject(err);
-            }
-
-            resolve({
-                affectedRows: result.affectedRows
-            });
-
+        resolve({
+            affectedRows: result.affectedRows
         });
 
     });
+
+});
+
 
 };
 
