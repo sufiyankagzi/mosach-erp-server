@@ -7,13 +7,11 @@ const {
     getProductionSummary
 } = require("../models/productionReportModel");
 
-
 // ======================================================
 // HELPER: CONVERT EXCEL DATE TO MYSQL DATE
 // ======================================================
 
 const convertExcelDate = (value) => {
-
     if (
         value === null ||
         value === undefined ||
@@ -27,7 +25,6 @@ const convertExcelDate = (value) => {
     if (value instanceof Date) {
         date = value;
     } else if (typeof value === "number") {
-
         // Excel serial date
         const parsed = XLSX.SSF.parse_date_code(value);
 
@@ -42,9 +39,7 @@ const convertExcelDate = (value) => {
                 parsed.d
             )
         );
-
     } else if (typeof value === "string") {
-
         const text = value.trim();
 
         if (!text) {
@@ -57,16 +52,18 @@ const convertExcelDate = (value) => {
         );
 
         if (match) {
-
             const year = Number(match[1]);
             const month = Number(match[2]);
             const day = Number(match[3]);
 
+            const dateCheck = new Date(
+                Date.UTC(year, month - 1, day)
+            );
+
             if (
-                month < 1 ||
-                month > 12 ||
-                day < 1 ||
-                day > 31
+                dateCheck.getUTCFullYear() !== year ||
+                dateCheck.getUTCMonth() !== month - 1 ||
+                dateCheck.getUTCDate() !== day
             ) {
                 return null;
             }
@@ -84,16 +81,18 @@ const convertExcelDate = (value) => {
         );
 
         if (match) {
-
             const day = Number(match[1]);
             const month = Number(match[2]);
             const year = Number(match[3]);
 
+            const dateCheck = new Date(
+                Date.UTC(year, month - 1, day)
+            );
+
             if (
-                month < 1 ||
-                month > 12 ||
-                day < 1 ||
-                day > 31
+                dateCheck.getUTCFullYear() !== year ||
+                dateCheck.getUTCMonth() !== month - 1 ||
+                dateCheck.getUTCDate() !== day
             ) {
                 return null;
             }
@@ -106,7 +105,6 @@ const convertExcelDate = (value) => {
         }
 
         return null;
-
     } else {
         return null;
     }
@@ -122,13 +120,11 @@ const convertExcelDate = (value) => {
     ].join("-");
 };
 
-
 // ======================================================
 // HELPER: CONVERT TEXT VALUES
 // ======================================================
 
 const textValue = (value) => {
-
     if (
         value === null ||
         value === undefined
@@ -141,13 +137,11 @@ const textValue = (value) => {
     return text === "" ? null : text;
 };
 
-
 // ======================================================
 // HELPER: CONVERT NUMERIC VALUES
 // ======================================================
 
 const numberValue = (value) => {
-
     if (
         value === null ||
         value === undefined ||
@@ -165,39 +159,41 @@ const numberValue = (value) => {
     return Math.trunc(number);
 };
 
-
 // ======================================================
 // 1. UPLOAD PRODUCTION EXCEL
 // POST /api/production-report/upload
 // ======================================================
 
 const uploadProductionExcel = async (req, res) => {
-
     try {
-
+        // --------------------------------------------------
         // CHECK FILE
-        if (!req.file) {
+        // --------------------------------------------------
 
+        if (!req.file) {
             return res.status(400).json({
                 success: false,
                 message: "Please select an Excel file."
             });
-
         }
 
-        // CHECK EXTENSION
+        // --------------------------------------------------
+        // CHECK FILE EXTENSION
+        // --------------------------------------------------
+
         const originalName = req.file.originalname || "";
 
         if (!/\.(xlsx|xls)$/i.test(originalName)) {
-
             return res.status(400).json({
                 success: false,
                 message: "Only .xlsx and .xls files are allowed."
             });
-
         }
 
+        // --------------------------------------------------
         // READ EXCEL FROM MEMORY BUFFER
+        // --------------------------------------------------
+
         const workbook = XLSX.read(
             req.file.buffer,
             {
@@ -207,19 +203,19 @@ const uploadProductionExcel = async (req, res) => {
         );
 
         if (!workbook.SheetNames.length) {
-
             return res.status(400).json({
                 success: false,
                 message: "Excel file has no worksheet."
             });
-
         }
 
+        // --------------------------------------------------
         // FIRST WORKSHEET
+        // --------------------------------------------------
+
         const worksheet =
             workbook.Sheets[workbook.SheetNames[0]];
 
-        // READ ROWS AS ARRAYS
         const excelRows = XLSX.utils.sheet_to_json(
             worksheet,
             {
@@ -237,12 +233,10 @@ const uploadProductionExcel = async (req, res) => {
         */
 
         if (excelRows.length < 3) {
-
             return res.status(400).json({
                 success: false,
                 message: "Excel file does not contain production records."
             });
-
         }
 
         const dataRows = excelRows.slice(2);
@@ -252,13 +246,13 @@ const uploadProductionExcel = async (req, res) => {
         const productionRows = [];
 
         let skippedRows = 0;
+        let invalidJobCardRows = 0;
 
         // ==================================================
         // MAP EXCEL COLUMNS TO DATABASE FIELDS
         // ==================================================
 
         for (const row of dataRows) {
-
             // Skip completely empty rows
             if (
                 !row ||
@@ -304,7 +298,6 @@ const uploadProductionExcel = async (req, res) => {
             */
 
             const production = {
-
                 sku: textValue(row[0]),
 
                 reportdate: convertExcelDate(row[1]),
@@ -374,71 +367,90 @@ const uploadProductionExcel = async (req, res) => {
                     numberValue(row[24]),
 
                 uploadbatchid: uploadBatchId
-
             };
 
-            productionRows.push(production);
+            // Job Card No. is required to identify a record
+            if (!production.jobcard) {
+                invalidJobCardRows++;
+                continue;
+            }
 
+            productionRows.push(production);
         }
 
-        // CHECK PRODUCTION RECORDS
-        if (!productionRows.length) {
+        // --------------------------------------------------
+        // CHECK VALID PRODUCTION RECORDS
+        // --------------------------------------------------
 
+        if (!productionRows.length) {
             return res.status(400).json({
                 success: false,
-                message: "No valid production rows found in Excel."
+                message:
+                    "No valid production rows found. Please check Job Card No. in Excel.",
+                data: {
+                    totalRowsRead: dataRows.length,
+                    skippedRows,
+                    invalidJobCardRows
+                }
             });
-
         }
 
-        // INSERT INTO DATABASE
+        // --------------------------------------------------
+        // INSERT / UPDATE DATABASE
+        // --------------------------------------------------
+
         const result = await insertProductionRows(
             productionRows
         );
 
-        return res.status(200).json({
+        // --------------------------------------------------
+        // RESPONSE
+        // --------------------------------------------------
 
+        return res.status(200).json({
             success: true,
 
             message: "Production Excel uploaded successfully.",
 
             data: {
-
                 fileName: originalName,
 
                 uploadBatchId,
 
                 totalRowsRead: dataRows.length,
 
-                insertedRows: result.affectedRows,
+                // Actual classification from model
+                insertedRows: result.insertedRows ?? 0,
 
-                skippedRows
+                updatedRows: result.updatedRows ?? 0,
 
+                unchangedRows: result.unchangedRows ?? 0,
+
+                skippedRows,
+
+                invalidJobCardRows,
+
+                // Rows from the latest uploaded Excel.
+                // Keep uploadbatchid out of the display data.
+                uploadedRows: productionRows.map(
+                    ({ uploadbatchid, ...row }) => row
+                )
             }
-
         });
 
     } catch (error) {
-
         console.error(
             "Upload Production Excel Error:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message: "Failed to upload production Excel.",
-
             error: error.message
-
         });
-
     }
-
 };
-
 
 // ======================================================
 // 2. GET PRODUCTION REPORT
@@ -446,54 +458,35 @@ const uploadProductionExcel = async (req, res) => {
 // ======================================================
 
 const fetchProductionReport = async (req, res) => {
-
     try {
-
         const filters = {
-
             fromDate: req.query.fromDate,
-
             toDate: req.query.toDate,
-
             article: req.query.article,
-
             jobcard: req.query.jobcard,
-
             sku: req.query.sku
-
         };
 
         const data = await getProductionReport(filters);
 
         return res.status(200).json({
-
             success: true,
-
             count: data.length,
-
             data
-
         });
 
     } catch (error) {
-
         console.error(
             "Fetch Production Report Error:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message: "Failed to fetch production report."
-
         });
-
     }
-
 };
-
 
 // ======================================================
 // 3. GET PRODUCTION DASHBOARD SUMMARY
@@ -501,57 +494,38 @@ const fetchProductionReport = async (req, res) => {
 // ======================================================
 
 const fetchProductionSummary = async (req, res) => {
-
     try {
-
         const filters = {
-
             fromDate: req.query.fromDate,
-
             toDate: req.query.toDate
-
         };
 
         const data = await getProductionSummary(filters);
 
         return res.status(200).json({
-
             success: true,
-
             data
-
         });
 
     } catch (error) {
-
         console.error(
             "Fetch Production Summary Error:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message: "Failed to fetch production summary."
-
         });
-
     }
-
 };
-
 
 // ======================================================
 // EXPORT
 // ======================================================
 
 module.exports = {
-
     uploadProductionExcel,
-
     fetchProductionReport,
-
     fetchProductionSummary
-
 };
