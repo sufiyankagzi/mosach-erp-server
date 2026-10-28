@@ -7,8 +7,6 @@ const db = require("../config/connectdb");
 
 // ======================================================
 // DATABASE FIELDS USED FOR COMPARISON
-// uploadbatchid is intentionally excluded because it
-// changes with every upload.
 // ======================================================
 
 const productionFields = [
@@ -18,6 +16,11 @@ const productionFields = [
     "colour",
     "size",
     "pair",
+
+    // NEW FIELDS
+    "packing",
+    "carton",
+
     "cuttingreceiveddate",
     "cuttingcontractor",
     "uppercontractor",
@@ -43,11 +46,15 @@ const productionFields = [
 // ======================================================
 
 const normalizeValue = (value, field) => {
-    if (value === undefined || value === null || value === "") {
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
         return null;
     }
 
-    // Normalize date values to YYYY-MM-DD
+    // Normalize dates
     if (
         field.toLowerCase().includes("date") ||
         field === "reportdate"
@@ -65,9 +72,11 @@ const normalizeValue = (value, field) => {
         return text;
     }
 
-    // Normalize numeric fields
+    // Normalize integer and decimal numeric fields
     const numericFields = [
         "pair",
+        "packing",
+        "carton",
         "upperreceivedpair",
         "upperstorepairqty",
         "machinepairqty",
@@ -87,7 +96,7 @@ const normalizeValue = (value, field) => {
 };
 
 // ======================================================
-// HELPER: CHECK IF PRODUCTION RECORDS ARE DIFFERENT
+// HELPER: CHECK IF RECORD HAS CHANGED
 // ======================================================
 
 const isRecordChanged = (existing, incoming) => {
@@ -100,8 +109,7 @@ const isRecordChanged = (existing, incoming) => {
 };
 
 // ======================================================
-// 1. INSERT OR UPDATE PRODUCTION REPORT DATA
-//
+// 1. INSERT OR UPDATE PRODUCTION REPORT
 // Requires UNIQUE INDEX on productionreport.jobcard
 // ======================================================
 
@@ -115,11 +123,7 @@ const insertProductionRows = async (rows) => {
         };
     }
 
-    // --------------------------------------------------
-    // Remove rows without Job Card No.
-    // A missing Job Card cannot safely identify a record.
-    // --------------------------------------------------
-
+    // Remove records without Job Card
     const validRows = rows.filter((row) => {
         return (
             row.jobcard !== null &&
@@ -137,11 +141,8 @@ const insertProductionRows = async (rows) => {
         };
     }
 
-    // --------------------------------------------------
-    // Remove duplicate Job Card No. inside the same file.
-    // Keep the LAST occurrence.
-    // --------------------------------------------------
-
+    // Remove duplicate Job Cards from same upload.
+    // Keep the last occurrence.
     const uniqueMap = new Map();
 
     for (const row of validRows) {
@@ -155,12 +156,8 @@ const insertProductionRows = async (rows) => {
 
     const uniqueRows = Array.from(uniqueMap.values());
 
-    // --------------------------------------------------
-    // FETCH EXISTING RECORDS
-    // --------------------------------------------------
-
+    // Fetch existing records
     const jobcards = uniqueRows.map((row) => row.jobcard);
-
     const placeholders = jobcards.map(() => "?").join(", ");
 
     const selectSql = `
@@ -179,17 +176,13 @@ const insertProductionRows = async (rows) => {
         });
     });
 
-    // Map existing rows by Job Card No.
     const existingMap = new Map();
 
     for (const row of existingRows) {
         existingMap.set(String(row.jobcard).trim(), row);
     }
 
-    // --------------------------------------------------
-    // CALCULATE INSERT / UPDATE / UNCHANGED COUNTS
-    // --------------------------------------------------
-
+    // Calculate insert/update/unchanged counts
     let insertedRows = 0;
     let updatedRows = 0;
     let unchangedRows = 0;
@@ -206,10 +199,7 @@ const insertProductionRows = async (rows) => {
         }
     }
 
-    // --------------------------------------------------
-    // BUILD UPSERT QUERY
-    // --------------------------------------------------
-
+    // INSERT / UPDATE QUERY
     const sql = `
         INSERT INTO productionreport (
             sku,
@@ -219,6 +209,8 @@ const insertProductionRows = async (rows) => {
             colour,
             size,
             pair,
+            packing,
+            carton,
             cuttingreceiveddate,
             cuttingcontractor,
             uppercontractor,
@@ -247,6 +239,8 @@ const insertProductionRows = async (rows) => {
             colour = VALUES(colour),
             size = VALUES(size),
             pair = VALUES(pair),
+            packing = VALUES(packing),
+            carton = VALUES(carton),
             cuttingreceiveddate = VALUES(cuttingreceiveddate),
             cuttingcontractor = VALUES(cuttingcontractor),
             uppercontractor = VALUES(uppercontractor),
@@ -276,6 +270,11 @@ const insertProductionRows = async (rows) => {
         row.colour ?? null,
         row.size ?? null,
         row.pair ?? 0,
+
+        // NEW FIELDS
+        row.packing ?? 0,
+        row.carton ?? 0,
+
         row.cuttingreceiveddate ?? null,
         row.cuttingcontractor ?? null,
         row.uppercontractor ?? null,
@@ -297,10 +296,7 @@ const insertProductionRows = async (rows) => {
         row.uploadbatchid ?? null
     ]);
 
-    // --------------------------------------------------
-    // EXECUTE INSERT / UPDATE
-    // --------------------------------------------------
-
+    // Execute query
     const result = await new Promise((resolve, reject) => {
         db.query(sql, [values], (err, result) => {
             if (err) {

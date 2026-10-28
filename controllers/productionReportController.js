@@ -25,7 +25,6 @@ const convertExcelDate = (value) => {
     if (value instanceof Date) {
         date = value;
     } else if (typeof value === "number") {
-        // Excel serial date
         const parsed = XLSX.SSF.parse_date_code(value);
 
         if (!parsed) {
@@ -125,10 +124,7 @@ const convertExcelDate = (value) => {
 // ======================================================
 
 const textValue = (value) => {
-    if (
-        value === null ||
-        value === undefined
-    ) {
+    if (value === null || value === undefined) {
         return null;
     }
 
@@ -138,7 +134,7 @@ const textValue = (value) => {
 };
 
 // ======================================================
-// HELPER: CONVERT NUMERIC VALUES
+// HELPER: CONVERT INTEGER VALUES
 // ======================================================
 
 const numberValue = (value) => {
@@ -160,16 +156,46 @@ const numberValue = (value) => {
 };
 
 // ======================================================
+// HELPER: CONVERT DECIMAL VALUES
+// ======================================================
+
+const decimalValue = (value) => {
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return 0;
+    }
+
+    const number = Number(value);
+
+    return Number.isFinite(number) && number >= 0
+        ? number
+        : 0;
+};
+
+// ======================================================
+// HELPER: CALCULATE CARTONS
+// Carton = Pair / Packing
+// ======================================================
+
+const calculateCarton = (pair, packing) => {
+    if (packing <= 0 || pair <= 0) {
+        return 0;
+    }
+
+    return Number((pair / packing).toFixed(2));
+};
+
+// ======================================================
 // 1. UPLOAD PRODUCTION EXCEL
 // POST /api/production-report/upload
 // ======================================================
 
 const uploadProductionExcel = async (req, res) => {
     try {
-        // --------------------------------------------------
         // CHECK FILE
-        // --------------------------------------------------
-
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -177,10 +203,7 @@ const uploadProductionExcel = async (req, res) => {
             });
         }
 
-        // --------------------------------------------------
         // CHECK FILE EXTENSION
-        // --------------------------------------------------
-
         const originalName = req.file.originalname || "";
 
         if (!/\.(xlsx|xls)$/i.test(originalName)) {
@@ -190,10 +213,7 @@ const uploadProductionExcel = async (req, res) => {
             });
         }
 
-        // --------------------------------------------------
-        // READ EXCEL FROM MEMORY BUFFER
-        // --------------------------------------------------
-
+        // READ EXCEL
         const workbook = XLSX.read(
             req.file.buffer,
             {
@@ -208,10 +228,6 @@ const uploadProductionExcel = async (req, res) => {
                 message: "Excel file has no worksheet."
             });
         }
-
-        // --------------------------------------------------
-        // FIRST WORKSHEET
-        // --------------------------------------------------
 
         const worksheet =
             workbook.Sheets[workbook.SheetNames[0]];
@@ -230,12 +246,42 @@ const uploadProductionExcel = async (req, res) => {
             ROW 1: SUMMARY
             ROW 2: COLUMN HEADINGS
             ROW 3 ONWARDS: PRODUCTION DATA
+
+            ASSUMED COLUMN INDEXES:
+
+            0  = SKU
+            1  = Date
+            2  = JOB CARD
+            3  = Article
+            4  = COLOUR
+            5  = Size
+            6  = Pair
+            7  = Packing             NEW
+            8  = Cutting Received Date
+            9  = Cutting Contractor
+            10 = Upper Contractor
+            11 = Upper Issue Date
+            12 = Upper Received Date
+            13 = Upper Received Pair
+            14 = Upper/Insole Contractor
+            15 = Upper/Insole Issued Date
+            16 = Upper Store Received Date
+            17 = Upper Store Pair Qty
+            18 = Upper Store Status
+            19 = Machine No.
+            20 = Machine Issue Date
+            21 = Machine Pair Qty
+            22 = 1st Pair
+            23 = 2nd Pair
+            24 = Rejection
+            25 = Total Pair
         */
 
         if (excelRows.length < 3) {
             return res.status(400).json({
                 success: false,
-                message: "Excel file does not contain production records."
+                message:
+                    "Excel file does not contain production records."
             });
         }
 
@@ -248,10 +294,7 @@ const uploadProductionExcel = async (req, res) => {
         let skippedRows = 0;
         let invalidJobCardRows = 0;
 
-        // ==================================================
         // MAP EXCEL COLUMNS TO DATABASE FIELDS
-        // ==================================================
-
         for (const row of dataRows) {
             // Skip completely empty rows
             if (
@@ -267,121 +310,113 @@ const uploadProductionExcel = async (req, res) => {
                 continue;
             }
 
-            /*
-                EXCEL COLUMN INDEXES
+            // PAIR
+            const pair = numberValue(row[6]);
 
-                0  = SKU
-                1  = Date
-                2  = JOB CARD
-                3  = Article
-                4  = COLOUR
-                5  = Size
-                6  = Pair
-                7  = Cutting Received Date
-                8  = Cutting Contractor
-                9  = Upper Contractor
-                10 = Upper Issue Date
-                11 = Upper Received Date
-                12 = Upper Received Pair
-                13 = Upper/Insole Contractor
-                14 = Upper/Insole Issued Date
-                15 = Upper Store Received Date
-                16 = Upper Store Pair Qty
-                17 = Upper Store Status
-                18 = Machine No.
-                19 = Machine Issue Date
-                20 = Machine Pair Qty
-                21 = 1st Pair
-                22 = 2nd Pair
-                23 = Rejection
-                24 = Total Pair
-            */
+            // PACKING
+            const packing = numberValue(row[7]);
+
+            // CARTON CALCULATION
+            const carton = calculateCarton(pair, packing);
 
             const production = {
                 sku: textValue(row[0]),
 
-                reportdate: convertExcelDate(row[1]),
+                reportdate:
+                    convertExcelDate(row[1]),
 
-                jobcard: textValue(row[2]),
+                jobcard:
+                    textValue(row[2]),
 
-                article: textValue(row[3]),
+                article:
+                    textValue(row[3]),
 
-                colour: textValue(row[4]),
+                colour:
+                    textValue(row[4]),
 
-                size: textValue(row[5]),
+                size:
+                    textValue(row[5]),
 
-                pair: numberValue(row[6]),
+                pair,
+
+                // NEW FIELDS
+                packing,
+                carton,
 
                 cuttingreceiveddate:
-                    convertExcelDate(row[7]),
+                    convertExcelDate(row[8]),
 
                 cuttingcontractor:
-                    textValue(row[8]),
-
-                uppercontractor:
                     textValue(row[9]),
 
-                upperissuedate:
-                    convertExcelDate(row[10]),
+                uppercontractor:
+                    textValue(row[10]),
 
-                upperreceiveddate:
+                upperissuedate:
                     convertExcelDate(row[11]),
 
+                upperreceiveddate:
+                    convertExcelDate(row[12]),
+
                 upperreceivedpair:
-                    numberValue(row[12]),
+                    numberValue(row[13]),
 
                 upperinsolecontractor:
-                    textValue(row[13]),
+                    textValue(row[14]),
 
                 upperinsoleissueddate:
-                    convertExcelDate(row[14]),
-
-                upperstorereceiveddate:
                     convertExcelDate(row[15]),
 
+                upperstorereceiveddate:
+                    convertExcelDate(row[16]),
+
                 upperstorepairqty:
-                    numberValue(row[16]),
+                    numberValue(row[17]),
 
                 upperstorestatus:
-                    textValue(row[17]),
-
-                machineno:
                     textValue(row[18]),
 
+                machineno:
+                    textValue(row[19]),
+
                 machineissuedate:
-                    convertExcelDate(row[19]),
+                    convertExcelDate(row[20]),
 
                 machinepairqty:
-                    numberValue(row[20]),
-
-                firstpair:
                     numberValue(row[21]),
 
-                secondpair:
+                firstpair:
                     numberValue(row[22]),
 
-                rejection:
+                secondpair:
                     numberValue(row[23]),
 
-                totalpair:
+                rejection:
                     numberValue(row[24]),
+
+                totalpair:
+                    numberValue(row[25]),
 
                 uploadbatchid: uploadBatchId
             };
 
-            // Job Card No. is required to identify a record
+            // JOB CARD IS REQUIRED
             if (!production.jobcard) {
                 invalidJobCardRows++;
                 continue;
             }
 
+            // Warn if Pair is present but Packing is missing
+            if (pair > 0 && packing <= 0) {
+                console.warn(
+                    `Packing is missing or invalid for Job Card: ${production.jobcard}`
+                );
+            }
+
             productionRows.push(production);
         }
 
-        // --------------------------------------------------
-        // CHECK VALID PRODUCTION RECORDS
-        // --------------------------------------------------
-
+        // CHECK VALID RECORDS
         if (!productionRows.length) {
             return res.status(400).json({
                 success: false,
@@ -395,43 +430,30 @@ const uploadProductionExcel = async (req, res) => {
             });
         }
 
-        // --------------------------------------------------
         // INSERT / UPDATE DATABASE
-        // --------------------------------------------------
-
         const result = await insertProductionRows(
             productionRows
         );
 
-        // --------------------------------------------------
         // RESPONSE
-        // --------------------------------------------------
-
         return res.status(200).json({
             success: true,
 
-            message: "Production Excel uploaded successfully.",
+            message:
+                "Production Excel uploaded successfully.",
 
             data: {
                 fileName: originalName,
-
                 uploadBatchId,
-
                 totalRowsRead: dataRows.length,
 
-                // Actual classification from model
                 insertedRows: result.insertedRows ?? 0,
-
                 updatedRows: result.updatedRows ?? 0,
-
                 unchangedRows: result.unchangedRows ?? 0,
 
                 skippedRows,
-
                 invalidJobCardRows,
 
-                // Rows from the latest uploaded Excel.
-                // Keep uploadbatchid out of the display data.
                 uploadedRows: productionRows.map(
                     ({ uploadbatchid, ...row }) => row
                 )
