@@ -3,49 +3,105 @@ const multer = require("multer");
 
 const router = express.Router();
 
-const {
-    uploadProductionExcel,
-    fetchProductionReport,
-    fetchProductionSummary
-} = require("../controllers/productionReportController");
+// Import Controller
+const productionReportController = require("../controllers/productionReportController");
 
+// ========================================
 // MULTER CONFIGURATION
+// ========================================
 
 const storage = multer.memoryStorage();
 
 const upload = multer({
-    storage,
-    limits: {
-        fileSize: 10 * 1024 * 1024 // Maximum 10 MB
-    },
-    fileFilter: (req, file, cb) => {
-        const allowedExtensions = /\.(xlsx|xls)$/i;
+storage: storage,
+limits: {
+fileSize: 10 * 1024 * 1024
+},
+fileFilter: function (req, file, cb) {
+const allowedExtensions = /.(xlsx|xls)$/i;
 
-        if (allowedExtensions.test(file.originalname)) {
-            return cb(null, true);
-        }
 
-        cb(new Error("Only Excel files (.xlsx, .xls) are allowed."));
+    if (allowedExtensions.test(file.originalname)) {
+        return cb(null, true);
     }
+
+    return cb(
+        new Error("Only Excel files (.xlsx, .xls) are allowed.")
+    );
+}
+
+
 });
 
-// 1. UPLOAD PRODUCTION EXCEL
+// ========================================
+// UPLOAD PRODUCTION EXCEL
+// POST /api/production-report/upload
+// ========================================
+
 router.post(
-    "/upload",
-    upload.single("file"),
-    uploadProductionExcel
+"/upload",
+upload.single("file"),
+function (req, res, next) {
+if (typeof productionReportController.uploadProductionExcel !== "function") {
+return res.status(500).json({
+success: false,
+message: "uploadProductionExcel controller function not found."
+});
+}
+
+
+    return productionReportController.uploadProductionExcel(req, res, next);
+}
+
+
 );
 
-// 2. GET PRODUCTION REPORT
+// ========================================
+// GET PRODUCTION REPORT
+// GET /api/production-report
+// ========================================
+
 router.get(
-    "/",
-    fetchProductionReport
+"/",
+function (req, res, next) {
+if (typeof productionReportController.getProductionReport !== "function") {
+return res.status(500).json({
+success: false,
+message: "getProductionReport controller function not found."
+});
+}
+
+
+    return productionReportController.getProductionReport(req, res, next);
+}
+
+
 );
 
-// 3. GET DASHBOARD SUMMARY
+// ========================================
+// GET PRODUCTION SUMMARY
+// GET /api/production-report/summary
+// ========================================
+
 router.get(
-    "/summary",
-    fetchProductionSummary
+"/summary",
+function (req, res, next) {
+if (typeof productionReportController.getProductionSummary !== "function") {
+return res.status(500).json({
+success: false,
+message: "getProductionSummary controller function not found."
+});
+}
+
+
+    return productionReportController.getProductionSummary(req, res, next);
+}
+
+
 );
+
+// ========================================
+// EXPORT ROUTER
+// ========================================
 
 module.exports = router;
