@@ -18,7 +18,7 @@ limits: {
 fileSize: 10 * 1024 * 1024
 },
 fileFilter: function (req, file, cb) {
-const allowedExtensions = /.(xlsx|xls)$/i;
+const allowedExtensions = /\.(xlsx|xls)$/i;
 
 
     if (allowedExtensions.test(file.originalname)) {
