@@ -1,126 +1,44 @@
+
 const XLSX = require("xlsx");
 const crypto = require("crypto");
 
 const {
     insertProductionRows,
     getProductionReport,
-    getProductionSummary
+    getProductionSummary,
 } = require("../models/productionReportModel");
 
 // ======================================================
-// HELPER: CONVERT EXCEL DATE TO MYSQL DATE
+// HELPER: NORMALIZE COLUMN HEADINGS
 // ======================================================
 
-const convertExcelDate = (value) => {
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return null;
-    }
-
-    let date;
-
-    if (value instanceof Date) {
-        date = value;
-    } else if (typeof value === "number") {
-        const parsed = XLSX.SSF.parse_date_code(value);
-
-        if (!parsed) {
-            return null;
-        }
-
-        date = new Date(
-            Date.UTC(
-                parsed.y,
-                parsed.m - 1,
-                parsed.d
-            )
-        );
-    } else if (typeof value === "string") {
-        const text = value.trim();
-
-        if (!text) {
-            return null;
-        }
-
-        // YYYY-MM-DD
-        let match = text.match(
-            /^(\d{4})-(\d{1,2})-(\d{1,2})$/
-        );
-
-        if (match) {
-            const year = Number(match[1]);
-            const month = Number(match[2]);
-            const day = Number(match[3]);
-
-            const dateCheck = new Date(
-                Date.UTC(year, month - 1, day)
-            );
-
-            if (
-                dateCheck.getUTCFullYear() !== year ||
-                dateCheck.getUTCMonth() !== month - 1 ||
-                dateCheck.getUTCDate() !== day
-            ) {
-                return null;
-            }
-
-            return [
-                year,
-                String(month).padStart(2, "0"),
-                String(day).padStart(2, "0")
-            ].join("-");
-        }
-
-        // DD/MM/YYYY or DD-MM-YYYY
-        match = text.match(
-            /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/
-        );
-
-        if (match) {
-            const day = Number(match[1]);
-            const month = Number(match[2]);
-            const year = Number(match[3]);
-
-            const dateCheck = new Date(
-                Date.UTC(year, month - 1, day)
-            );
-
-            if (
-                dateCheck.getUTCFullYear() !== year ||
-                dateCheck.getUTCMonth() !== month - 1 ||
-                dateCheck.getUTCDate() !== day
-            ) {
-                return null;
-            }
-
-            return [
-                year,
-                String(month).padStart(2, "0"),
-                String(day).padStart(2, "0")
-            ].join("-");
-        }
-
-        return null;
-    } else {
-        return null;
-    }
-
-    if (isNaN(date.getTime())) {
-        return null;
-    }
-
-    return [
-        date.getUTCFullYear(),
-        String(date.getUTCMonth() + 1).padStart(2, "0"),
-        String(date.getUTCDate()).padStart(2, "0")
-    ].join("-");
+const normalizeHeader = (value) => {
+    return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\r\n]+/g, " ")
+        .replace(/[^a-z0-9]/g, "");
 };
 
 // ======================================================
-// HELPER: CONVERT TEXT VALUES
+// HELPER: GET VALUE USING MULTIPLE POSSIBLE HEADINGS
+// ======================================================
+
+const getColumnValue = (row, headerMap, aliases) => {
+    for (const alias of aliases) {
+        const key = normalizeHeader(alias);
+
+        if (headerMap.has(key)) {
+            const index = headerMap.get(key);
+            return row[index];
+        }
+    }
+
+    return null;
+};
+
+// ======================================================
+// HELPER: CONVERT TEXT
 // ======================================================
 
 const textValue = (value) => {
@@ -134,38 +52,42 @@ const textValue = (value) => {
 };
 
 // ======================================================
-// HELPER: CONVERT INTEGER VALUES
+// HELPER: CONVERT NUMBER
 // ======================================================
 
 const numberValue = (value) => {
     if (
         value === null ||
         value === undefined ||
-        value === ""
+        String(value).trim() === ""
     ) {
         return 0;
     }
 
-    const number = Number(value);
-
-    if (!Number.isFinite(number)) {
-        return 0;
+    if (typeof value === "string") {
+        value = value.replace(/,/g, "").trim();
     }
 
-    return Math.trunc(number);
+    const number = Number(value);
+
+    return Number.isFinite(number) ? Math.trunc(number) : 0;
 };
 
 // ======================================================
-// HELPER: CONVERT DECIMAL VALUES
+// HELPER: CONVERT DECIMAL
 // ======================================================
 
 const decimalValue = (value) => {
     if (
         value === null ||
         value === undefined ||
-        value === ""
+        String(value).trim() === ""
     ) {
         return 0;
+    }
+
+    if (typeof value === "string") {
+        value = value.replace(/,/g, "").trim();
     }
 
     const number = Number(value);
@@ -176,16 +98,172 @@ const decimalValue = (value) => {
 };
 
 // ======================================================
-// HELPER: CALCULATE CARTONS
+// HELPER: CONVERT EXCEL DATE TO MYSQL DATE
+// Output: YYYY-MM-DD
+// ======================================================
+
+const convertExcelDate = (value) => {
+    if (
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ""
+    ) {
+        return null;
+    }
+
+    // Excel cell may already be a JavaScript Date.
+    if (value instanceof Date) {
+        if (Number.isNaN(value.getTime())) {
+            return null;
+        }
+
+        return [
+            value.getFullYear(),
+            String(value.getMonth() + 1).padStart(2, "0"),
+            String(value.getDate()).padStart(2, "0"),
+        ].join("-");
+    }
+
+    // Excel serial date.
+    if (typeof value === "number") {
+        const parsed = XLSX.SSF.parse_date_code(value);
+
+        if (!parsed) {
+            return null;
+        }
+
+        return [
+            parsed.y,
+            String(parsed.m).padStart(2, "0"),
+            String(parsed.d).padStart(2, "0"),
+        ].join("-");
+    }
+
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const text = value.trim();
+
+    // YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+    let match = text.match(
+        /^(\d{4})-(\d{1,2})-(\d{1,2})(?:\s.*)?$/
+    );
+
+    if (match) {
+        return validateDate(
+            Number(match[1]),
+            Number(match[2]),
+            Number(match[3])
+        );
+    }
+
+    // DD/MM/YYYY or DD-MM-YYYY
+    match = text.match(
+        /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/
+    );
+
+    if (match) {
+        return validateDate(
+            Number(match[3]),
+            Number(match[2]),
+            Number(match[1])
+        );
+    }
+
+    return null;
+};
+
+// ======================================================
+// HELPER: VALIDATE DATE
+// ======================================================
+
+const validateDate = (year, month, day) => {
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() !== month - 1 ||
+        date.getUTCDate() !== day
+    ) {
+        return null;
+    }
+
+    return [
+        year,
+        String(month).padStart(2, "0"),
+        String(day).padStart(2, "0"),
+    ].join("-");
+};
+
+// ======================================================
+// HELPER: CALCULATE CARTON
 // Carton = Pair / Packing
 // ======================================================
 
 const calculateCarton = (pair, packing) => {
-    if (packing <= 0 || pair <= 0) {
+    if (pair <= 0 || packing <= 0) {
         return 0;
     }
 
     return Number((pair / packing).toFixed(2));
+};
+
+// ======================================================
+// HELPER: FIND HEADER ROW
+// Searches the first 20 rows.
+// ======================================================
+
+const findHeaderRow = (excelRows) => {
+    const jobCardAliases = [
+        "jobcard",
+        "job card",
+        "job card no",
+        "jobcard no",
+        "job card number",
+    ];
+
+    const articleAliases = [
+        "article",
+        "article name",
+        "article no",
+        "articleno",
+    ];
+
+    for (
+        let rowIndex = 0;
+        rowIndex < Math.min(excelRows.length, 20);
+        rowIndex++
+    ) {
+        const row = excelRows[rowIndex] || [];
+
+        const headers = row.map(normalizeHeader);
+
+        const hasJobCard = jobCardAliases.some((alias) =>
+            headers.includes(normalizeHeader(alias))
+        );
+
+        const hasArticle = articleAliases.some((alias) =>
+            headers.includes(normalizeHeader(alias))
+        );
+
+        if (hasJobCard && hasArticle) {
+            const headerMap = new Map();
+
+            headers.forEach((header, index) => {
+                if (header && !headerMap.has(header)) {
+                    headerMap.set(header, index);
+                }
+            });
+
+            return {
+                headerRowIndex: rowIndex,
+                headerMap,
+            };
+        }
+    }
+
+    return null;
 };
 
 // ======================================================
@@ -199,93 +277,64 @@ const uploadProductionExcel = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "Please select an Excel file."
+                message: "Please select an Excel file.",
             });
         }
 
-        // CHECK FILE EXTENSION
+        // CHECK EXTENSION
         const originalName = req.file.originalname || "";
 
         if (!/\.(xlsx|xls)$/i.test(originalName)) {
             return res.status(400).json({
                 success: false,
-                message: "Only .xlsx and .xls files are allowed."
+                message: "Only .xlsx and .xls files are allowed.",
             });
         }
 
         // READ EXCEL
-        const workbook = XLSX.read(
-            req.file.buffer,
-            {
-                type: "buffer",
-                cellDates: true
-            }
-        );
+        const workbook = XLSX.read(req.file.buffer, {
+            type: "buffer",
+            cellDates: true,
+        });
 
         if (!workbook.SheetNames.length) {
             return res.status(400).json({
                 success: false,
-                message: "Excel file has no worksheet."
+                message: "Excel file has no worksheet.",
             });
         }
 
         const worksheet =
             workbook.Sheets[workbook.SheetNames[0]];
 
-        const excelRows = XLSX.utils.sheet_to_json(
-            worksheet,
-            {
-                header: 1,
-                defval: null,
-                raw: true,
-                blankrows: false
-            }
-        );
+        const excelRows = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            defval: null,
+            raw: true,
+            blankrows: false,
+        });
 
-        /*
-            ROW 1: SUMMARY
-            ROW 2: COLUMN HEADINGS
-            ROW 3 ONWARDS: PRODUCTION DATA
-
-            ASSUMED COLUMN INDEXES:
-
-            0  = SKU
-            1  = Date
-            2  = JOB CARD
-            3  = Article
-            4  = COLOUR
-            5  = Size
-            6  = Pair
-            7  = Packing             NEW
-            8  = Cutting Received Date
-            9  = Cutting Contractor
-            10 = Upper Contractor
-            11 = Upper Issue Date
-            12 = Upper Received Date
-            13 = Upper Received Pair
-            14 = Upper/Insole Contractor
-            15 = Upper/Insole Issued Date
-            16 = Upper Store Received Date
-            17 = Upper Store Pair Qty
-            18 = Upper Store Status
-            19 = Machine No.
-            20 = Machine Issue Date
-            21 = Machine Pair Qty
-            22 = 1st Pair
-            23 = 2nd Pair
-            24 = Rejection
-            25 = Total Pair
-        */
-
-        if (excelRows.length < 3) {
+        if (!excelRows.length) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Excel file does not contain production records."
+                message: "Excel worksheet is empty.",
             });
         }
 
-        const dataRows = excelRows.slice(2);
+        // FIND HEADERS
+        const headerResult = findHeaderRow(excelRows);
+
+        if (!headerResult) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Job Card and Article headings were not found in the first 20 rows.",
+            });
+        }
+
+        const { headerRowIndex, headerMap } = headerResult;
+
+        const dataRows = excelRows.slice(headerRowIndex + 1);
 
         const uploadBatchId = crypto.randomUUID();
 
@@ -294,182 +343,240 @@ const uploadProductionExcel = async (req, res) => {
         let skippedRows = 0;
         let invalidJobCardRows = 0;
 
-        // MAP EXCEL COLUMNS TO DATABASE FIELDS
+        // ==================================================
+        // PROCESS EXCEL ROWS
+        // ==================================================
+
         for (const row of dataRows) {
-            // Skip completely empty rows
-            if (
-                !row ||
-                row.every(
-                    value =>
-                        value === null ||
-                        value === undefined ||
-                        String(value).trim() === ""
-                )
-            ) {
+            if (!row || !row.some(
+                (value) =>
+                    value !== null &&
+                    value !== undefined &&
+                    String(value).trim() !== ""
+            )) {
                 skippedRows++;
                 continue;
             }
 
-            // PAIR
-            const pair = numberValue(row[6]);
+            const read = (...aliases) =>
+                getColumnValue(row, headerMap, aliases);
 
-            // PACKING
-            const packing = numberValue(row[7]);
+            const pair = numberValue(
+                read("Pair", "Pairs", "Pair Qty", "Pair Quantity")
+            );
 
-            // CARTON CALCULATION
-            const carton = calculateCarton(pair, packing);
+            const packing = numberValue(
+                read("Packing", "Packing Qty", "Pairs Per Carton")
+            );
+
+            const excelCarton = read(
+                "Carton",
+                "Cartons",
+                "Carton Qty",
+                "Carton Quantity"
+            );
+
+            // Use Excel Carton if provided; otherwise calculate.
+            const carton =
+                excelCarton !== null &&
+                excelCarton !== undefined &&
+                String(excelCarton).trim() !== ""
+                    ? decimalValue(excelCarton)
+                    : calculateCarton(pair, packing);
 
             const production = {
-                sku: textValue(row[0]),
+                sku: textValue(read("SKU", "SKU No", "Sku Number")),
 
-                reportdate:
-                    convertExcelDate(row[1]),
+                reportdate: convertExcelDate(
+                    read("Date", "Report Date", "Production Date")
+                ),
 
-                jobcard:
-                    textValue(row[2]),
+                jobcard: textValue(
+                    read(
+                        "JOB CARD",
+                        "Job Card",
+                        "Job Card No",
+                        "Job Card Number",
+                        "Jobcard No"
+                    )
+                ),
 
-                article:
-                    textValue(row[3]),
+                article: textValue(
+                    read("Article", "Article Name", "Article No")
+                ),
 
-                colour:
-                    textValue(row[4]),
+                colour: textValue(
+                    read("COLOUR", "Color", "Colour Name")
+                ),
 
-                size:
-                    textValue(row[5]),
+                size: textValue(
+                    read("Size", "Size Name")
+                ),
 
                 pair,
 
-                // NEW FIELDS
                 packing,
                 carton,
 
-                cuttingreceiveddate:
-                    convertExcelDate(row[8]),
+                cuttingreceiveddate: convertExcelDate(
+                    read(
+                        "Cutting Received Date",
+                        "Cutting Receive Date"
+                    )
+                ),
 
-                cuttingcontractor:
-                    textValue(row[9]),
+                cuttingcontractor: textValue(
+                    read("Cutting Contractor", "Cutting Contractor Name")
+                ),
 
-                uppercontractor:
-                    textValue(row[10]),
+                uppercontractor: textValue(
+                    read("Upper Contractor", "Upper Contractor Name")
+                ),
 
-                upperissuedate:
-                    convertExcelDate(row[11]),
+                upperissuedate: convertExcelDate(
+                    read("Upper Issue Date", "Upper Issued Date")
+                ),
 
-                upperreceiveddate:
-                    convertExcelDate(row[12]),
+                upperreceiveddate: convertExcelDate(
+                    read("Upper Received Date", "Upper Receive Date")
+                ),
 
-                upperreceivedpair:
-                    numberValue(row[13]),
+                upperreceivedpair: numberValue(
+                    read(
+                        "Upper Received Pair",
+                        "Upper Received Pairs",
+                        "Upper Receive Pair"
+                    )
+                ),
 
-                upperinsolecontractor:
-                    textValue(row[14]),
+                upperinsolecontractor: textValue(
+                    read(
+                        "Upper/Insole Contractor",
+                        "Upper Insole Contractor",
+                        "Upper Insole Contractor Name"
+                    )
+                ),
 
-                upperinsoleissueddate:
-                    convertExcelDate(row[15]),
+                upperinsoleissuedate: convertExcelDate(
+                    read(
+                        "Upper/Insole Issued Date",
+                        "Upper Insole Issued Date",
+                        "Upper Insole Issue Date"
+                    )
+                ),
 
-                upperstorereceiveddate:
-                    convertExcelDate(row[16]),
+                upperstorereceiveddate: convertExcelDate(
+                    read(
+                        "Upper Store Received Date",
+                        "Upper Store Receive Date"
+                    )
+                ),
 
-                upperstorepairqty:
-                    numberValue(row[17]),
+                upperstorepairqty: numberValue(
+                    read(
+                        "Upper Store Pair Qty",
+                        "Upper Store Pair",
+                        "Upper Store Quantity"
+                    )
+                ),
 
-                upperstorestatus:
-                    textValue(row[18]),
+                upperstorestatus: textValue(
+                    read("Upper Store Status", "Store Status")
+                ),
 
-                machineno:
-                    textValue(row[19]),
+                machineno: textValue(
+                    read("Machine No", "Machine Number", "Machine")
+                ),
 
-                machineissuedate:
-                    convertExcelDate(row[20]),
+                machineissuedate: convertExcelDate(
+                    read("Machine Issue Date", "Machine Issued Date")
+                ),
 
-                machinepairqty:
-                    numberValue(row[21]),
+                machinepairqty: numberValue(
+                    read(
+                        "Machine Pair Qty",
+                        "Machine Pair",
+                        "Machine Quantity"
+                    )
+                ),
 
-                firstpair:
-                    numberValue(row[22]),
+                firstpair: numberValue(
+                    read("1st Pair", "First Pair", "1st Pairs")
+                ),
 
-                secondpair:
-                    numberValue(row[23]),
+                secondpair: numberValue(
+                    read("2nd Pair", "Second Pair", "2nd Pairs")
+                ),
 
-                rejection:
-                    numberValue(row[24]),
+                rejection: numberValue(
+                    read("Rejection", "Rejected Pair", "Rejected Pairs")
+                ),
 
-                totalpair:
-                    numberValue(row[25]),
+                totalpair: numberValue(
+                    read("Total Pair", "Total Pairs", "Total Production Pair")
+                ),
 
-                uploadbatchid: uploadBatchId
+                uploadbatchid: uploadBatchId,
             };
 
-            // JOB CARD IS REQUIRED
+            // JOB CARD REQUIRED
             if (!production.jobcard) {
                 invalidJobCardRows++;
                 continue;
             }
 
-            // Warn if Pair is present but Packing is missing
-            if (pair > 0 && packing <= 0) {
-                console.warn(
-                    `Packing is missing or invalid for Job Card: ${production.jobcard}`
-                );
-            }
-
             productionRows.push(production);
         }
 
-        // CHECK VALID RECORDS
+        // NO VALID ROWS
         if (!productionRows.length) {
             return res.status(400).json({
                 success: false,
                 message:
-                    "No valid production rows found. Please check Job Card No. in Excel.",
+                    "No valid production rows found. Please check the Job Card column and Excel data.",
                 data: {
                     totalRowsRead: dataRows.length,
                     skippedRows,
-                    invalidJobCardRows
-                }
+                    invalidJobCardRows,
+                },
             });
         }
 
-        // INSERT / UPDATE DATABASE
-        const result = await insertProductionRows(
-            productionRows
-        );
+        // SAVE TO DATABASE
+        const result = await insertProductionRows(productionRows);
 
-        // RESPONSE
+        // RETURN IMPORTED ROWS
         return res.status(200).json({
             success: true,
-
-            message:
-                "Production Excel uploaded successfully.",
-
+            message: "Production Excel uploaded successfully.",
             data: {
                 fileName: originalName,
                 uploadBatchId,
                 totalRowsRead: dataRows.length,
-
+                validRows: productionRows.length,
                 insertedRows: result.insertedRows ?? 0,
                 updatedRows: result.updatedRows ?? 0,
                 unchangedRows: result.unchangedRows ?? 0,
-
                 skippedRows,
                 invalidJobCardRows,
-
                 uploadedRows: productionRows.map(
                     ({ uploadbatchid, ...row }) => row
-                )
-            }
+                ),
+            },
         });
-
     } catch (error) {
-        console.error(
-            "Upload Production Excel Error:",
-            error
-        );
+        console.error("========== PRODUCTION EXCEL UPLOAD ERROR ==========");
+        console.error("Message:", error.message);
+        console.error("Code:", error.code);
+        console.error("SQL Message:", error.sqlMessage);
+        console.error("Stack:", error.stack);
+        console.error("====================================================");
 
         return res.status(500).json({
             success: false,
             message: "Failed to upload production Excel.",
-            error: error.message
+            error: error.sqlMessage || error.message,
+            code: error.code || null,
         });
     }
 };
@@ -482,11 +589,11 @@ const uploadProductionExcel = async (req, res) => {
 const fetchProductionReport = async (req, res) => {
     try {
         const filters = {
-            fromDate: req.query.fromDate,
-            toDate: req.query.toDate,
+            fromDate: req.query.fromDate || req.query.fromdate,
+            toDate: req.query.toDate || req.query.todate,
             article: req.query.article,
             jobcard: req.query.jobcard,
-            sku: req.query.sku
+            sku: req.query.sku,
         };
 
         const data = await getProductionReport(filters);
@@ -494,50 +601,44 @@ const fetchProductionReport = async (req, res) => {
         return res.status(200).json({
             success: true,
             count: data.length,
-            data
+            data,
         });
-
     } catch (error) {
-        console.error(
-            "Fetch Production Report Error:",
-            error
-        );
+        console.error("Fetch Production Report Error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch production report."
+            message: "Failed to fetch production report.",
+            error: error.message,
         });
     }
 };
 
 // ======================================================
-// 3. GET PRODUCTION DASHBOARD SUMMARY
+// 3. GET PRODUCTION SUMMARY
 // GET /api/production-report/summary
 // ======================================================
 
 const fetchProductionSummary = async (req, res) => {
     try {
         const filters = {
-            fromDate: req.query.fromDate,
-            toDate: req.query.toDate
+            fromDate: req.query.fromDate || req.query.fromdate,
+            toDate: req.query.toDate || req.query.todate,
         };
 
         const data = await getProductionSummary(filters);
 
         return res.status(200).json({
             success: true,
-            data
+            data,
         });
-
     } catch (error) {
-        console.error(
-            "Fetch Production Summary Error:",
-            error
-        );
+        console.error("Fetch Production Summary Error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch production summary."
+            message: "Failed to fetch production summary.",
+            error: error.message,
         });
     }
 };
@@ -549,5 +650,6 @@ const fetchProductionSummary = async (req, res) => {
 module.exports = {
     uploadProductionExcel,
     fetchProductionReport,
-    fetchProductionSummary
+    fetchProductionSummary,
 };
+
