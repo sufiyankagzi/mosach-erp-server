@@ -24,6 +24,12 @@ const {
     createProductionReportTable
 } = require("./config/productionreportTable");
 
+const {
+    createToCutReportTable
+} = require("./config/tocutreporttable");
+
+
+
 // ROUTES
 
 const loginRoutes = require("./routes/loginRoutes");
@@ -42,6 +48,7 @@ const orderRoutes = require("./routes/orderRoutes")
 const orderReportRoutes = require("./routes/orderReportRoutes");
 const articleBomRoutes = require("./routes/articleBomRoutes");
 const productionReportRoutes = require("./routes/productionReportRoutes");
+const tocutReportRoutes = require("./routes/tocutReportRoutes");
 
 
 // CORS
@@ -130,6 +137,7 @@ app.use("/api/order/report", orderReportRoutes);
 app.use("/api/order",orderRoutes)
 app.use("/api/articlebom",articleBomRoutes);
 app.use("/api/production-report", productionReportRoutes);
+app.use("/api/tocut-report", tocutReportRoutes);
 // REPORTS API
 
 
@@ -154,7 +162,7 @@ createOrderTables();
 createMaterialTable();
 createArticleBOMTable();
 createProductionReportTable();
-
+createToCutReportTable();
 // ERROR HANDLER  abc
 
 app.use((err, req, res, next) => {

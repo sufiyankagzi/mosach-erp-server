@@ -1,4 +1,4 @@
-const db = require('../models/connectdb');
+const db = require("../config/connectdb");
 const XLSX = require('xlsx');
 
 const clean = (value) => String(value ?? '').trim();
