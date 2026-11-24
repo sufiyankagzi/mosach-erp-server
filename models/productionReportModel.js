@@ -3,6 +3,7 @@ const db = require("../config/connectdb");
 const productionFields = [
 "sku",
 "packing",
+"carton",
 "reportdate",
 "jobcard",
 "article",
@@ -42,6 +43,7 @@ const dateFields = [
 const numericFields = [
 "packing",
 "pair",
+"carton",
 "upperreceivedpair",
 "upperstorepairqty",
 "machinepairqty",
@@ -175,7 +177,7 @@ if (!row.sku) {
 }
 
 // Carton calculation: 24 pairs = 1 carton.
-row.carton = Number((row.pair / 24).toFixed(2));
+// row.carton = Number((row.pair / 24).toFixed(2));
 
 row.uploadbatchid = normalizeText(sourceRow.uploadbatchid);
 
@@ -243,7 +245,6 @@ for (const row of existingRows) {
 
 const columns = [
     ...productionFields,
-    "carton",
     "uploadbatchid"
 ];
 

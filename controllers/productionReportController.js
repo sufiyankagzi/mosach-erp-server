@@ -19,6 +19,7 @@ String(value ?? "")
 const HEADER_MAP = {
 sku: "sku",
 packing: "packing",
+carton: "carton",
 
  
 date: "reportdate",
