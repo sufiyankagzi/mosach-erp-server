@@ -62,6 +62,9 @@ message: "uploadProductionExcel controller function not found."
 
 );
 
+// CLEAR ALL PRODUCTION RECORDS
+router.delete("/clear", productionReportController.clearProductionRecords);
+
 // ======================================================
 // GET PRODUCTION REPORT
 // GET /api/production-report

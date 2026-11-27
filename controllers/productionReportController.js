@@ -4,7 +4,7 @@ const { randomUUID } = require("crypto");
 const {
 insertProductionRows,
 getProductionReport,
-getProductionSummary
+getProductionSummary,clearProductionRecords
 } = require("../models/productionReportModel");
 
 // ======================================================
@@ -366,4 +366,29 @@ toDate: req.query.todate
 }
  
 
+};
+
+// ======================================================
+// CLEAR ALL PRODUCTION RECORDS
+// ======================================================
+
+exports.clearProductionRecords = async (req, res) => {
+    try {
+        const result = await clearProductionRecords();
+
+        return res.status(200).json({
+            success: true,
+            message: "All production records deleted successfully.",
+            deletedRecords: result.affectedRows
+        });
+
+    } catch (error) {
+        console.error("Clear Production Records Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete production records.",
+            error: error.message
+        });
+    }
 };

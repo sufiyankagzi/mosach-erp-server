@@ -422,8 +422,19 @@ return queryAsync(sql, params).then((rows) => rows[0]);
 
 };
 
+const clearProductionRecords = async () => {
+    const result = await queryAsync(
+        "DELETE FROM productionreport"
+    );
+
+    return {
+        affectedRows: result.affectedRows
+    };
+};
+
 module.exports = {
 insertProductionRows,
 getProductionReport,
-getProductionSummary
+getProductionSummary,
+clearProductionRecords
 };
