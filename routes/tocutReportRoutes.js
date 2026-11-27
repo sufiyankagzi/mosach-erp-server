@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { getToCutReport, uploadToCutReport } = require('../controllers/tocutReportController');
+const { getToCutReport, uploadToCutReport,clearToCutReport } = require('../controllers/tocutReportController');
 
 const router = express.Router();
 const upload = multer({
@@ -14,5 +14,8 @@ const upload = multer({
 
 router.get('/', getToCutReport);
 router.post('/upload', upload.single('file'), uploadToCutReport);
+
+// Clear all To Cut records
+router.delete('/clear', clearToCutReport);
 
 module.exports = router;

@@ -131,4 +131,28 @@ const uploadToCutReport = async (req, res) => {
   }
 };
 
-module.exports = { getToCutReport, uploadToCutReport };
+// ======================================================
+// CLEAR ALL TO CUT RECORDS
+// ======================================================
+
+const clearToCutReport = (req, res) => {
+  db.query('DELETE FROM tocutreport', (error, result) => {
+    if (error) {
+      console.error('Clear To Cut Records Error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'To Cut records delete nahi ho paye.',
+        error: error.message,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'All To Cut records successfully deleted.',
+      deletedRows: result.affectedRows,
+    });
+  });
+};
+
+module.exports = { getToCutReport, uploadToCutReport,clearToCutReport };
